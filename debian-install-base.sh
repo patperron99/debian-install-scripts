@@ -82,6 +82,7 @@ declare -a BASE_PACKAGES=(
     "psmisc"
     "npm"
     "shellcheck"
+    "fwupd"
 )
 
 declare -a PICOM_DEPS=(
@@ -105,7 +106,8 @@ declare -a PICOM_DEPS=(
     "libxcb-shape0-dev"
     "libxcb-util-dev"
     "libxcb-xfixes0-dev"
-    "meson" "ninja-build"
+    "meson"
+    "ninja-build"
     "uthash-dev"
     "libconfig-dev"
     "libconfig-doc"
@@ -155,7 +157,6 @@ for pkg in "${PICOM_DEPS[@]}"; do
             FAILED_PACKAGES+=("$pkg")
         fi
     else
-        echo -e "${YELLOW}Package not found in repository: $pkg${NC}"
         FAILED_PACKAGES+=("$pkg")
     fi
 done
@@ -190,40 +191,40 @@ else
     FAILED_PACKAGES+=("neovim")
 fi
 
-echo "Configuring tmux..."
-cat > /home/$REGULAR_USER/.tmux.conf << EOF
-# Set the status bar position to top
-set-option -g status-position top
+echo "Installing Nerd Fonts..."
+# URL for Nerd Fonts repository
+NERD_FONTS_REPO="https://github.com/ryanoasis/nerd-fonts"
+# Directory to clone the repository
+CLONE_DIR="/tmp/nerd-fonts"
+# Function to install a font
+install_font() {
+    local font_name=$1
+    echo "Installing $font_name..."
+    ./install.sh $font_name
+}
+# Clone the repository
+git clone --depth 1 $NERD_FONTS_REPO $CLONE_DIR
+cd $CLONE_DIR || exit
+# Install a few popular Nerd Fonts
+install_font "FiraCode"
+install_font "Hack"
+install_font "JetBrainsMono"
+# Clean up
+cd ..
+rm -rf $CLONE_DIR
+echo "Nerd Fonts installation completed."
 
-# Enable mouse support
-set -g mouse on
-
-# Start windows and panes at 1, not 0
-set -g base-index 1
-setw -g pane-base-index 1
-
-# Catppuccin theme configuration
-set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'tmux-plugins/tmux-sensible'
-set -g @plugin 'catppuccin/tmux'
-set -g @catppuccin_flavour 'mocha'
-
-# Initialize TMUX plugin manager
-run '~/.tmux/plugins/tpm/tpm'
-EOF
-
-# Install tmux plugin manager
-git clone https://github.com/tmux-plugins/tpm /home/$REGULAR_USER/.tmux/plugins/tpm
-
-# Fix permissions
-chown -R $REGULAR_USER:$REGULAR_USER /home/$REGULAR_USER/.tmux.conf
-chown -R $REGULAR_USER:$REGULAR_USER /home/$REGULAR_USER/.tmux
 
 # Enable necessary services
 systemctl enable lightdm
 systemctl enable NetworkManager
 systemctl enable bluetooth
 systemctl enable acpid
+
+# Change lightdm options 
+sed -i 's/^greeter-session=.*/greeter-session=slick-greeter/' /etc/lightdm/lightdm.conf
+sed -i 's/^user-session=.*/user-session=i3/' /etc/lightdm/slick-greeter.conf
+sed -i 's/^greeter-hide-users=.*/greeter-hide-users=false/' /etc/lightdm/slick-greeter.conf
 
 # Print installation summary
 echo -e "\n${GREEN}Installation Summary:${NC}"
