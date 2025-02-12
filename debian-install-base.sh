@@ -73,11 +73,9 @@ declare -a BASE_PACKAGES=(
     "arandr"
     "flatpak"
     "lightdm"
-    "lightdm-gtk-greeter"
     "slick-greeter"
     "sxhkd"
     "thunar"
-    "killall"
     "ripgrep"
     "psmisc"
     "npm"
@@ -184,7 +182,8 @@ echo "Installing Neovim from source..."
 cd /tmp || exit
 if git clone https://github.com/neovim/neovim.git; then
     cd neovim || exit
-    make CMAKE_BUILD_TYPE=RelWithDebInfo
+    git checkout stable
+    make CMAKE_BUILD_TYPE=Release
     make install
 else
     echo -e "${RED}Failed to clone Neovim repository${NC}"
@@ -222,9 +221,9 @@ systemctl enable bluetooth
 systemctl enable acpid
 
 # Change lightdm options 
-sed -i 's/^greeter-session=.*/greeter-session=slick-greeter/' /etc/lightdm/lightdm.conf
-sed -i 's/^user-session=.*/user-session=i3/' /etc/lightdm/slick-greeter.conf
-sed -i 's/^greeter-hide-users=.*/greeter-hide-users=false/' /etc/lightdm/slick-greeter.conf
+sed -i 's/.*greeter-session=.*/greeter-session=slick-greeter/' /etc/lightdm/lightdm.conf
+sed -i 's/.*user-session=.*/user-session=i3/' /etc/lightdm/lightdm.conf
+sed -i 's/.*greeter-hide-users=.*/greeter-hide-users=false/' /etc/lightdm/lightdm.conf
 
 # Print installation summary
 echo -e "\n${GREEN}Installation Summary:${NC}"
@@ -240,8 +239,7 @@ fi
 
 echo -e "\n${YELLOW}Next steps:${NC}"
 echo "1. Reboot your system"
-echo "2. After first boot, run 'tmux' and press prefix + I to install tmux plugins"
-echo "3. Configure your desktop environment settings"
+echo "2. Configure your desktop environment settings from scratch or from your Dotfiles"
 
 # Save the failed packages list to a file for reference
 if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
