@@ -62,7 +62,6 @@ declare -a BASE_PACKAGES=(
     "python3-venv"
     "network-manager"
     "network-manager-gnome"
-    "bluez"
     "blueman"
     "pulseaudio"
     "pavucontrol"
@@ -74,12 +73,13 @@ declare -a BASE_PACKAGES=(
     "flatpak"
     "lightdm"
     "slick-greeter"
-    "sxhkd"
     "thunar"
     "ripgrep"
     "psmisc"
     "npm"
     "shellcheck"
+    "xfce4-power-manager"
+    "xfce4-power-manager-settings"
     "fwupd"
 )
 
@@ -171,6 +171,16 @@ else
     FAILED_PACKAGES+=("picom-yshui")
 fi
 
+echo "Installing rofi themes ..."
+su sysadmin -
+if git clone --depth=1 https://github.com/adi1090x/rofi.git; then
+    cd rofi || exit
+    bash setup.sh
+    exit #exit sysadmin session
+else
+    echo -e "${RED}Failed to clone rofi repository${NC}"
+    FAILED_PACKAGES+=("rofi-themes")
+
 echo "Installing Flatpak and Zen browser..."
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 if ! flatpak install -y flathub app.zen_browser.zen; then
@@ -212,6 +222,19 @@ install_font "JetBrainsMono"
 cd ..
 rm -rf $CLONE_DIR
 echo "Nerd Fonts installation completed."
+
+echo "Installing Dotconfigs ..."
+su sysadmin -
+if git clone --depth=1 https://github.com/patperron99/dotconfigs; then
+    cd dotconfigs || exit
+    rm ~/.bashrc
+    for dir in */; do
+      stow -t ~ "$dir"
+    done
+    exit #exit sysadmin session
+else
+    echo -e "${RED}Failed to clone dotconfigs repository${NC}"
+    FAILED_PACKAGES+=("Dotconfigs")
 
 
 # Enable necessary services
