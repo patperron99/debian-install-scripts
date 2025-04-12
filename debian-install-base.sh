@@ -57,6 +57,7 @@ declare -a BASE_PACKAGES=(
     "acpi"
     "acpid"
     "xbacklight"
+    "xclip"
     "feh"
     "arandr"
     "flatpak"
