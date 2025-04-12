@@ -68,6 +68,7 @@ declare -a BASE_PACKAGES=(
     "npm"
     "shellcheck"
     "lxappearance"
+    "lxpolkit"
     "xfce4-power-manager"
     "fwupd"
 )
