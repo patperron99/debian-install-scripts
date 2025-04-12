@@ -72,6 +72,7 @@ declare -a BASE_PACKAGES=(
     "lxpolkit"
     "xfce4-power-manager"
     "fwupd"
+    "flameshot"
 )
 
 declare -a PICOM_DEPS=(
