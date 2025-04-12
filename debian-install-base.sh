@@ -112,7 +112,7 @@ declare -a SUCCESSFUL_PACKAGES=()
 echo "Setting up Debian repositories..."
 
 # Add non-free and contrib repositories
-sudo cat > /etc/apt/sources.list << EOF
+cat <<EOF > /tmp/sources.list
 deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
 deb-src http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
 deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
@@ -120,6 +120,8 @@ deb-src http://security.debian.org/debian-security trixie-security main contrib 
 deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
 deb-src http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
 EOF
+
+sudo cp /tmp/sources.list /etc/apt/sources.list
 
 echo "Updating system..."
 sudo apt-get update
