@@ -29,21 +29,16 @@ install_package() {
 # Array of base packages to install
 # Edit this array to add or remove packages
 declare -a BASE_PACKAGES=(
-    "i3-wm"
+    "python3-pip"
+    "python3-venv"
     "polybar"
+    "feh"
     "rofi"
     "dunst"
-    "alacritty"
-    "kitty"
     "tmux"
-    "stow"
-    "git"
-    "curl"
-    "wget"
     "build-essential"
     "cmake"
     "gettext"
-    "pkg-config"
     "unzip"
     "python3-pip"
     "python3-venv"
@@ -51,18 +46,8 @@ declare -a BASE_PACKAGES=(
     "network-manager-gnome"
     "gnome-disk-utility"
     "gnome-calculator"
-    "blueman"
-    "pulseaudio"
-    "pavucontrol"
-    "acpi"
-    "acpid"
-    "xbacklight"
     "xclip"
-    "feh"
-    "arandr"
     "flatpak"
-    "lightdm"
-    "slick-greeter"
     "thunar"
     "ripgrep"
     "psmisc"
@@ -71,7 +56,6 @@ declare -a BASE_PACKAGES=(
     "lxappearance"
     "lxpolkit"
     "xfce4-power-manager"
-    "fwupd"
     "flameshot"
 )
 
@@ -109,24 +93,10 @@ declare -a PICOM_DEPS=(
 declare -a FAILED_PACKAGES=()
 declare -a SUCCESSFUL_PACKAGES=()
 
-echo "Setting up Debian repositories..."
-
-# Add non-free and contrib repositories
-cat <<EOF > /tmp/sources.list
-deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-deb-src http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-EOF
-
-sudo cp /tmp/sources.list /etc/apt/sources.list
-
 echo "Updating system..."
-sudo apt-get update
+sudo apt update
 
-echo "Installing base packages..."
+echo "Installing extras packages..."
 for pkg in "${BASE_PACKAGES[@]}"; do
     if check_package "$pkg"; then
         if install_package "$pkg"; then
@@ -213,17 +183,6 @@ cd dotconfigs || exit
 for dir in */; do
   stow "$dir"
 done
-
-# Enable necessary services
-sudo systemctl enable lightdm
-sudo systemctl enable NetworkManager
-sudo systemctl enable bluetooth
-sudo systemctl enable acpid
-
-# Change lightdm options 
-sudo sed -i 's/.*greeter-session=.*/greeter-session=slick-greeter/' /etc/lightdm/lightdm.conf
-sudo sed -i 's/.*user-session=.*/user-session=i3/' /etc/lightdm/lightdm.conf
-sudo sed -i 's/.*greeter-hide-users=.*/greeter-hide-users=false/' /etc/lightdm/lightdm.conf
 
 # Print installation summary
 echo -e "\n${GREEN}Installation Summary:${NC}"
