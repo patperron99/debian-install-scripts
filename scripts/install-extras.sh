@@ -1,33 +1,10 @@
 #!/bin/bash
 set -uo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-
-# Function to check if a package exists in apt repository
-check_package() {
-    sudo apt-cache show "$1" &> /dev/null
-    return $?
-}
-
-# Function to install a package with error handling
-install_package() {
-    local pkg=$1
-    if sudo apt-get install -y "$pkg" &> /dev/null; then
-        echo -e "${GREEN}Successfully installed: $pkg${NC}"
-        return 0
-    else
-        echo -e "${RED}Failed to install: $pkg${NC}"
-        return 1
-    fi
-}
+# Source common functions
+source scripts/common_functions.sh
 
 # Array of base packages to install
-# Edit this array to add or remove packages
 declare -a BASE_PACKAGES=(
     "python3-pip"
     "python3-venv"
@@ -40,10 +17,6 @@ declare -a BASE_PACKAGES=(
     "cmake"
     "gettext"
     "unzip"
-    "python3-pip"
-    "python3-venv"
-    "network-manager"
-    "network-manager-gnome"
     "gnome-disk-utility"
     "gnome-calculator"
     "xclip"
@@ -67,7 +40,6 @@ declare -a PICOM_DEPS=(
     "libepoxy-dev"
     "libpcre2-dev"
     "libpixman-1-dev"
-    "libx11-xcb-dev"
     "libxcb1-dev"
     "libxcb-composite0-dev"
     "libxcb-damage0-dev"
@@ -84,14 +56,11 @@ declare -a PICOM_DEPS=(
     "ninja-build"
     "uthash-dev"
     "libconfig-dev"
-    "libconfig-doc"
-    "libconfig9"
     "libdbus-1-dev"
 )
 
-# Arrays to store failed and successful installations
-declare -a FAILED_PACKAGES=()
-declare -a SUCCESSFUL_PACKAGES=()
+# Log file for errors
+LOG_FILE="/var/log/install-extras.log"
 
 echo "Updating system..."
 sudo apt update
@@ -103,10 +72,12 @@ for pkg in "${BASE_PACKAGES[@]}"; do
             SUCCESSFUL_PACKAGES+=("$pkg")
         else
             FAILED_PACKAGES+=("$pkg")
+            echo "Failed to install: $pkg" | sudo tee -a "$LOG_FILE"
         fi
     else
         echo -e "${YELLOW}Package not found in repository: $pkg${NC}"
         FAILED_PACKAGES+=("$pkg")
+        echo "Package not found: $pkg" | sudo tee -a "$LOG_FILE"
     fi
 done
 
@@ -117,9 +88,11 @@ for pkg in "${PICOM_DEPS[@]}"; do
             SUCCESSFUL_PACKAGES+=("$pkg")
         else
             FAILED_PACKAGES+=("$pkg")
+            echo "Failed to install: $pkg" | sudo tee -a "$LOG_FILE"
         fi
     else
         FAILED_PACKAGES+=("$pkg")
+        echo "Package not found: $pkg" | sudo tee -a "$LOG_FILE"
     fi
 done
 
@@ -129,10 +102,11 @@ if git clone https://github.com/yshui/picom.git; then
     cd picom || exit
     meson setup --buildtype=release build
     ninja -C build
-    ninja -C build install
+    sudo ninja -C build install
 else
     echo -e "${RED}Failed to clone picom repository${NC}"
     FAILED_PACKAGES+=("picom-yshui")
+    echo "Failed to clone picom repository" | sudo tee -a "$LOG_FILE"
 fi
 
 echo "Installing rofi themes ..."
@@ -141,12 +115,12 @@ git clone --depth=1 https://github.com/adi1090x/rofi.git
 cd rofi || exit
 bash setup.sh
 
-
 echo "Installing Flatpak and Zen browser..."
 sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 if ! sudo flatpak install -y flathub app.zen_browser.zen; then
     echo -e "${RED}Failed to install Zen browser${NC}"
     FAILED_PACKAGES+=("zen-browser-flatpak")
+    echo "Failed to install Zen browser" | sudo tee -a "$LOG_FILE"
 fi
 
 echo "Installing Neovim from source..."
@@ -159,18 +133,15 @@ if git clone https://github.com/neovim/neovim.git; then
 else
     echo -e "${RED}Failed to clone Neovim repository${NC}"
     FAILED_PACKAGES+=("neovim")
+    echo "Failed to clone Neovim repository" | sudo tee -a "$LOG_FILE"
 fi
 
 echo "Installing Nerd Fonts..."
-# URL for Nerd Fonts repository
 NERD_FONTS_REPO="https://github.com/ryanoasis/nerd-fonts"
-# Directory to clone the repository
 CLONE_DIR="/tmp/nerd-fonts"
-# Clone the repository
 git clone --depth 1 $NERD_FONTS_REPO $CLONE_DIR
 cd $CLONE_DIR || exit
 bash install.sh
-# Clean up
 cd ..
 rm -rf $CLONE_DIR
 echo "Nerd Fonts installation completed."
@@ -185,23 +156,9 @@ for dir in */; do
 done
 
 # Print installation summary
-echo -e "\n${GREEN}Installation Summary:${NC}"
-echo -e "\n${GREEN}Successfully installed packages:${NC}"
-printf '%s\n' "${SUCCESSFUL_PACKAGES[@]}"
-
-echo -e "\n${RED}Failed installations:${NC}"
-if [ ${#FAILED_PACKAGES[@]} -eq 0 ]; then
-    echo "None"
-else
-    printf '%s\n' "${FAILED_PACKAGES[@]}"
-fi
-
-echo -e "\n${YELLOW}Next steps:${NC}"
-echo "1. Reboot your system"
-echo "2. Configure your desktop environment settings from scratch or from your Dotfiles"
+print_summary
 
 # Save the failed packages list to a file for reference
 if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
-    echo "Failed packages have been saved to /root/failed_packages.txt"
-    printf '%s\n' "${FAILED_PACKAGES[@]}" > /root/failed_packages.txt
+    echo "Failed packages have been saved to $LOG_FILE"
 fi
