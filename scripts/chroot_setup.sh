@@ -1,26 +1,27 @@
 #!/bin/bash
 
+RELEASE=$1
+
 # Set up apt sources
-cat > /etc/apt/sources.list << 'SOURCES'
-deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-deb-src http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-SOURCES
+cat > /etc/apt/sources.list << EOF
+deb http://deb.debian.org/debian $RELEASE main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian $RELEASE main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security $RELEASE-security main contrib non-free non-free-firmware
+deb-src http://security.debian.org/debian-security $RELEASE-security main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian $RELEASE-updates main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian $RELEASE-updates main contrib non-free non-free-firmware
+EOF
 
 # Update and install packages
 apt update
 apt install -y locales
 dpkg-reconfigure tzdata
-# dpkg-reconfigure locales
 
-#ask fot hostname
+# Ask for hostname
 echo "Please enter the hostname for your system:"
 read -r HOSTNAME
 
-#if hostname is empty, set default
+# If hostname is empty, set default
 if [ -z "$HOSTNAME" ]; then
     HOSTNAME=debian-strap
     echo "No hostname provided, using default: $HOSTNAME"
@@ -73,4 +74,3 @@ grub-install "$SELECTED_DISK"
 update-grub
 
 echo "Installation completed successfully!"
-
