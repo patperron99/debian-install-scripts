@@ -15,6 +15,17 @@ EOF
 # Update and install packages
 apt update
 apt install -y locales
+
+# Configure locales
+echo "Configuring locales..."
+dpkg-reconfigure locales
+
+# Set default locale
+echo "Generating /etc/locale.conf..."
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+echo "LANGUAGE=en_US:en" >> /etc/locale.conf
+
+# Configure timezone
 dpkg-reconfigure tzdata
 
 # Ask for hostname
