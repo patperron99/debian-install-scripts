@@ -6,6 +6,7 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Function to print colored messages
@@ -22,11 +23,15 @@ error() {
     exit 1
 }
 
+ask() {
+    echo -e "${BLUE}$1${NC}"
+}
+
 # Function to get partition number for a device
 get_partition_suffix() {
     local device=$1
     local partition_num=$2
-    
+
     if echo "$device" | grep -q "nvme"; then
         echo "p${partition_num}"
     else
@@ -59,7 +64,8 @@ done
 echo
 
 while true; do
-    read -p "Enter the disk number to use [0-$((${#available_disks[@]}-1))]: " disk_num
+    ask "Enter the disk number to use [0-$((${#available_disks[@]}-1))]: "
+    read -p "" disk_num
     if [[ "$disk_num" =~ ^[0-9]+$ ]] && [ "$disk_num" -ge 0 ] && [ "$disk_num" -lt "${#available_disks[@]}" ]; then
         DISK="${available_disks[$disk_num]}"
         break
@@ -75,7 +81,8 @@ PART3="$(get_partition_suffix "$DISK" 3)"
 
 # Confirmation
 warn "WARNING: This will DESTROY ALL DATA on $DISK"
-read -p "Are you sure you want to continue? (y/N): " confirm
+ask "Are you sure you want to continue? (y/N): "
+read -p "" confirm
 if [ "${confirm,,}" != "y" ]; then
     error "Operation cancelled by user"
 fi
@@ -87,37 +94,76 @@ sgdisk -n 1:2048:+512M -t 1:EF00 "$DISK"  # EFI
 sgdisk -n 2:0:+1G -t 2:8300 "$DISK"       # Boot
 sgdisk -n 3:0:0 -t 3:8309 "$DISK"         # Root
 
-# Setup LUKS
-log "Setting up LUKS encryption..."
-cryptsetup -y -v --type luks2 luksFormat --label Debian "${DISK}${PART3}"
-cryptsetup open "${DISK}${PART3}" cryptroot
+# Ask for file system and encryption options
+ask "Choose file system (btrfs, ext4, xfs): "
+read -p "" FILESYSTEM
+ask "Do you want to encrypt the root partition? (y/N): "
+read -p "" ENCRYPT
+
+if [ "${ENCRYPT,,}" == "y" ]; then
+    log "Setting up LUKS encryption..."
+    cryptsetup -y -v --type luks2 luksFormat --label Debian "${DISK}${PART3}"
+    cryptsetup open "${DISK}${PART3}" cryptroot
+    ROOT_PARTITION="/dev/mapper/cryptroot"
+else
+    ROOT_PARTITION="${DISK}${PART3}"
+fi
 
 # Format partitions
 log "Formatting partitions..."
 mkfs.vfat "${DISK}${PART1}"
 mkfs.ext4 "${DISK}${PART2}"
-mkfs.btrfs /dev/mapper/cryptroot
 
-# Create and mount btrfs subvolumes
-log "Creating and mounting btrfs subvolumes..."
-mount /dev/mapper/cryptroot /mnt
-btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
-btrfs subvolume create /mnt/@snapshots
-umount /mnt
+case $FILESYSTEM in
+    btrfs)
+        mkfs.btrfs $ROOT_PARTITION
+        ;;
+    ext4)
+        mkfs.ext4 $ROOT_PARTITION
+        ;;
+    xfs)
+        mkfs.xfs $ROOT_PARTITION
+        ;;
+    *)
+        error "Unsupported file system: $FILESYSTEM"
+        ;;
+esac
+
+# Create and mount subvolumes if btrfs
+if [ "$FILESYSTEM" == "btrfs" ]; then
+    log "Creating and mounting btrfs subvolumes..."
+    mount $ROOT_PARTITION /mnt
+    btrfs subvolume create /mnt/@
+    btrfs subvolume create /mnt/@home
+    btrfs subvolume create /mnt/@snapshots
+    umount /mnt
+fi
 
 # Mount all partitions
-mount -o noatime,compress=zstd:1,subvol=@ /dev/mapper/cryptroot /mnt
-mkdir -p /mnt/{boot,home,.snapshots}
-mount -o noatime,compress=zstd:1,subvol=@home /dev/mapper/cryptroot /mnt/home
-mount -o noatime,compress=zstd:1,subvol=@snapshots /dev/mapper/cryptroot /mnt/.snapshots
+case $FILESYSTEM in
+    btrfs)
+        mount -o noatime,compress=zstd:1,subvol=@ $ROOT_PARTITION /mnt
+        mkdir -p /mnt/{boot,home,.snapshots}
+        mount -o noatime,compress=zstd:1,subvol=@home $ROOT_PARTITION /mnt/home
+        mount -o noatime,compress=zstd:1,subvol=@snapshots $ROOT_PARTITION /mnt/.snapshots
+        ;;
+    *)
+        mount $ROOT_PARTITION /mnt
+        mkdir -p /mnt/{boot,home}
+        ;;
+esac
+
 mount "${DISK}${PART2}" /mnt/boot/
 mkdir -p /mnt/boot/efi
 mount "${DISK}${PART1}" /mnt/boot/efi
 
+# Ask for release option
+ask "Choose Debian release (stable, testing, unstable): "
+read -p "" RELEASE
+
 # Install base system
 log "Installing base Debian system..."
-debootstrap --arch amd64 trixie /mnt
+debootstrap --arch amd64 $RELEASE /mnt
 
 # Generate fstab
 log "Generating fstab..."
@@ -128,68 +174,12 @@ echo "$DISK" > /mnt/selected_disk
 
 # Prepare chroot environment
 log "Preparing chroot environment..."
-cat > /mnt/setup.sh << 'EOF'
-#!/bin/bash
-
-# Set up apt sources
-cat > /etc/apt/sources.list << 'SOURCES'
-deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-deb-src http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-SOURCES
-
-# Update and install packages
-apt update
-apt install -y locales
-dpkg-reconfigure tzdata
-dpkg-reconfigure locales
-
-# Set hostname
-HOSTNAME=debian-strap
-echo $HOSTNAME > /etc/hostname
-echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME" >> /etc/hosts
-
-# Install essential packages
-apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-linux-nonfree \
-    sudo vim bash-completion grub-efi-amd64 network-manager btrfs-progs \
-    cryptsetup openssh-server git plymouth plymouth-themes wget
-
-# Configure cryptsetup and GRUB
-echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
-echo "GRUB_BACKGROUND=" >> /etc/default/grub
-CRYPT_UUID=$(blkid -s UUID -o value $(findfs LABEL=Debian))
-echo "cryptroot UUID=$CRYPT_UUID none luks,discard" >> /etc/crypttab
-apt install -y cryptsetup-initramfs
-
-# Configure tmpfs for /tmp
-echo "tmpfs /tmp tmpfs rw,nosuid,nodev 0 0" >> /etc/fstab
-
-# Set root password
-echo "Set root password:"
-passwd
-
-# Create user
-useradd sysadmin -m -c "sysadmin" -s /bin/bash
-echo "Set sysadmin password:"
-passwd sysadmin
-usermod -aG sudo,adm,dialout,cdrom,floppy,audio,dip,video,plugdev,users,netdev sysadmin
-
-# Install and update GRUB
-SELECTED_DISK=$(cat /selected_disk)
-grub-install "$SELECTED_DISK"
-update-grub
-
-echo "Installation completed successfully!"
-EOF
-
+cp scripts/chroot_setup.sh /mnt/setup.sh
 chmod +x /mnt/setup.sh
 
 # Chroot and run setup
 log "Starting chroot installation..."
-arch-chroot /mnt ./setup.sh
+arch-chroot /mnt ./setup.sh "$RELEASE"
 
 # Cleanup
 rm /mnt/setup.sh /mnt/selected_disk
