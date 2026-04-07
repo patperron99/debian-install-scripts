@@ -46,8 +46,10 @@ echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME" >> /etc/hosts
 
 # Install essential packages
 apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-linux-nonfree \
+    firmware-iwlwifi firmware-realtek \
     sudo vim bash-completion grub-efi-amd64 network-manager btrfs-progs \
-    cryptsetup openssh-server git plymouth plymouth-themes wget
+    cryptsetup openssh-server git plymouth plymouth-themes wget curl \
+    wpasupplicant iw rfkill pciutils usbutils build-essential dkms
 
 # Configure cryptsetup and GRUB
 echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
