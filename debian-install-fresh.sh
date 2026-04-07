@@ -183,6 +183,19 @@ genfstab -U /mnt >> /mnt/etc/fstab
 # Store the selected disk for use in chroot
 echo "$DISK" > /mnt/selected_disk
 
+# Copy WiFi configuration from live system if available
+if [ -d /etc/NetworkManager/system-connections ]; then
+    ask "Do you want to copy WiFi configuration from live system? (y/N): "
+    read -p "" COPY_WIFI
+    if [ "${COPY_WIFI,,}" == "y" ]; then
+        log "Copying WiFi configuration..."
+        mkdir -p /mnt/etc/NetworkManager/system-connections
+        cp -r /etc/NetworkManager/system-connections/* /mnt/etc/NetworkManager/system-connections/ 2>/dev/null || warn "No WiFi connections found to copy"
+        # Fix permissions (NetworkManager requires 600)
+        chmod 600 /mnt/etc/NetworkManager/system-connections/* 2>/dev/null || true
+    fi
+fi
+
 # Prepare chroot environment
 log "Preparing chroot environment..."
 cp scripts/chroot_setup.sh /mnt/setup.sh

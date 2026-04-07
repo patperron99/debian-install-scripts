@@ -61,9 +61,90 @@ sudo ./debian-install-base.sh
 
 ---
 
+---
+
+### `install-hyprland.sh`
+
+This script automates the installation of Hyprland window manager and its ecosystem on Debian Testing/Sid. It offers two installation methods: from repositories or compilation from source.
+
+#### Features:
+- Detects Debian version
+- Installs available packages from Debian Testing/Sid repos
+- Optional compilation from source for latest versions
+- Modular package organization (available, sid-only, source-only)
+- Build dependencies management
+- Comprehensive error handling and logging
+
+#### Usage:
+```bash
+bash scripts/install-hyprland.sh
+```
+
+Choose between:
+1. Install from Sid repositories (faster, recommended)
+2. Compile from source (latest versions, takes longer)
+
+For detailed information, see [HYPRLAND.md](HYPRLAND.md) and [PACKAGE_STATUS.md](PACKAGE_STATUS.md).
+
+---
+
+### `compile-hyprland-sources.sh`
+
+Standalone script to compile Hyprland and related packages from their GitHub sources.
+
+#### Features:
+- Selective compilation (choose which packages to build)
+- Automatic dependency resolution
+- Support for CMake, Meson, Go, and Rust projects
+- Installs to `/usr/local` with proper permissions
+
+#### Usage:
+```bash
+bash scripts/compile-hyprland-sources.sh
+```
+
+Select packages to compile:
+1. Hyprland (window manager + dependencies)
+2. hyprlock (lock screen)
+3. hypridle (idle daemon)
+4. hyprpaper (wallpaper manager)
+5. swww (animated wallpapers)
+6. cliphist (clipboard manager)
+7. All of the above
+
+---
+
+### `setup-hyprland-config.sh`
+
+Creates a complete Hyprland configuration inspired by Omarchy's modular structure.
+
+#### Features:
+- Modular configuration files (envs, monitors, input, bindings, etc.)
+- Automatic backup of existing configs
+- Waybar configuration with sensible defaults
+- Pre-configured keybindings and window rules
+- Autostart configuration
+
+#### Usage:
+```bash
+bash scripts/setup-hyprland-config.sh
+```
+
+Configuration files created in:
+- `~/.config/hypr/` (Hyprland configs)
+- `~/.config/waybar/` (status bar)
+
+---
+
+## Documentation
+
+- **[HYPRLAND.md](HYPRLAND.md)** - Complete Hyprland installation and configuration guide
+- **[PACKAGE_STATUS.md](PACKAGE_STATUS.md)** - Detailed package availability status for Debian
+
 ## Notes
 - Ensure you have a reliable internet connection during script execution.
 - These scripts are intended for advanced users familiar with Linux system administration.
+- For Hyprland, Debian Testing (Forky) or Sid (Unstable) is required.
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.

@@ -1,0 +1,17 @@
+# Claude Code files
+.claude/
+CLAUDE.md
+.claude.json
+
+# Log files
+*.log
+/var/log/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Build directories
+build/
+.local/src/hyprland-build/
