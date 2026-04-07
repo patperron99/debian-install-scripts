@@ -51,12 +51,17 @@ apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-lin
     cryptsetup openssh-server git plymouth plymouth-themes wget curl \
     wpasupplicant iw rfkill pciutils usbutils build-essential dkms
 
-# Configure cryptsetup and GRUB
-echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
+# Check if encryption was used
+if [ -e /dev/mapper/cryptroot ]; then
+    echo "Configuring encrypted system..."
+    echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
+    CRYPT_UUID=$(blkid -s UUID -o value $(findfs LABEL=Debian))
+    echo "cryptroot UUID=$CRYPT_UUID none luks,discard" >> /etc/crypttab
+    apt install -y cryptsetup-initramfs
+fi
+
+# Configure GRUB
 echo "GRUB_BACKGROUND=" >> /etc/default/grub
-CRYPT_UUID=$(blkid -s UUID -o value $(findfs LABEL=Debian))
-echo "cryptroot UUID=$CRYPT_UUID none luks,discard" >> /etc/crypttab
-apt install -y cryptsetup-initramfs
 
 # Configure tmpfs for /tmp
 echo "tmpfs /tmp tmpfs rw,nosuid,nodev 0 0" >> /etc/fstab
@@ -81,9 +86,14 @@ echo "Set $USERNAME password:"
 passwd $USERNAME
 usermod -aG sudo,adm,dialout,cdrom,floppy,audio,dip,video,plugdev,users,netdev $USERNAME
 
+# Update initramfs to include all configurations
+echo "Updating initramfs..."
+update-initramfs -u -k all
+
 # Install and update GRUB
 SELECTED_DISK=$(cat /selected_disk)
-grub-install "$SELECTED_DISK"
+echo "Installing GRUB to $SELECTED_DISK..."
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Debian "$SELECTED_DISK"
 update-grub
 
 echo "Installation completed successfully!"

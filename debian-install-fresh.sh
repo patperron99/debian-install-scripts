@@ -89,10 +89,21 @@ fi
 
 # Partition the disk
 log "Creating partitions on $DISK..."
+# Wipe any existing filesystem signatures
+wipefs -a "$DISK" || true
 sgdisk --zap-all "$DISK"
 sgdisk -n 1:2048:+512M -t 1:EF00 "$DISK"  # EFI
 sgdisk -n 2:0:+1G -t 2:8300 "$DISK"       # Boot
 sgdisk -n 3:0:0 -t 3:8309 "$DISK"         # Root
+
+# Inform kernel of partition table changes
+partprobe "$DISK"
+sleep 2
+
+# Wipe filesystem signatures from each partition
+wipefs -a "${DISK}${PART1}" || true
+wipefs -a "${DISK}${PART2}" || true
+wipefs -a "${DISK}${PART3}" || true
 
 # Ask for file system and encryption options
 ask "Choose file system (btrfs, ext4, xfs): "
