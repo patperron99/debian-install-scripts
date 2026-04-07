@@ -193,10 +193,10 @@ cat > "$CONFIG_DIR/bindings.conf" << 'EOF'
 $mainMod = SUPER
 
 # Application shortcuts
-bind = $mainMod, Return, exec, kitty
+bind = $mainMod, Return, exec, alacritty
 bind = $mainMod, Q, killactive,
 bind = $mainMod SHIFT, E, exit,
-bind = $mainMod, E, exec, thunar
+bind = $mainMod, E, exec, nautilus
 bind = $mainMod, V, togglefloating,
 bind = $mainMod, D, exec, wofi --show drun
 bind = $mainMod, P, pseudo, # dwindle
@@ -247,10 +247,10 @@ bind = $mainMod, mouse_up, workspace, e-1
 bindm = $mainMod, mouse:272, movewindow
 bindm = $mainMod, mouse:273, resizewindow
 
-# Media keys
-binde = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
-binde = , XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-bind = , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+# Media keys (using pamixer for Wayland-native control)
+binde = , XF86AudioRaiseVolume, exec, pamixer -i 5
+binde = , XF86AudioLowerVolume, exec, pamixer -d 5
+bind = , XF86AudioMute, exec, pamixer -t
 bind = , XF86AudioPlay, exec, playerctl play-pause
 bind = , XF86AudioNext, exec, playerctl next
 bind = , XF86AudioPrev, exec, playerctl previous
@@ -259,13 +259,16 @@ bind = , XF86AudioPrev, exec, playerctl previous
 binde = , XF86MonBrightnessUp, exec, brightnessctl set 5%+
 binde = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
 
-# Screenshot
+# Screenshot (Wayland-native)
 bind = , Print, exec, grim -g "$(slurp)" - | wl-copy
 bind = SHIFT, Print, exec, grim - | wl-copy
 bind = $mainMod, Print, exec, grim ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png
 
-# Lock screen
-bind = $mainMod, L, exec, swaylock
+# Lock screen (hyprlock if available, otherwise swaylock)
+bind = $mainMod, L, exec, hyprlock || swaylock
+
+# Color picker (if hyprpicker is installed)
+bind = $mainMod SHIFT, C, exec, hyprpicker -a
 EOF
 
 echo -e "${GREEN}Created: bindings.conf${NC}"
@@ -284,18 +287,21 @@ exec-once = waybar
 # Notification daemon
 exec-once = mako
 
-# Polkit agent
-exec-once = /usr/lib/polkit-kde-authentication-agent-1
+# Polkit agent (GNOME version for Wayland)
+exec-once = /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
 
-# Network manager applet
-exec-once = nm-applet --indicator
+# SwayOSD (volume/brightness OSD) - if compiled
+exec-once = swayosd-server
 
-# Bluetooth manager
-exec-once = blueman-applet
+# Idle management (if hypridle is installed)
+# exec-once = hypridle
+
+# Night light (if hyprsunset is installed)
+# exec-once = hyprsunset
 
 # Clipboard manager
-exec-once = wl-paste --type text --watch cliphist store
-exec-once = wl-paste --type image --watch cliphist store
+exec-once = wl-paste --type text --watch wl-copy
+exec-once = wl-paste --type image --watch wl-copy
 EOF
 
 echo -e "${GREEN}Created: autostart.conf${NC}"
@@ -310,13 +316,12 @@ cat > "$CONFIG_DIR/windowrules.conf" << 'EOF'
 # windowrule = workspace 2, ^(firefox)$
 
 # Float certain windows by default
-windowrule = float, ^(nm-connection-editor)$
-windowrule = float, ^(blueman-manager)$
-windowrule = float, ^(pavucontrol)$
+windowrule = float, ^(org.gnome.Calculator)$
+windowrule = float, ^(gnome-disk-utility)$
 
 # Opacity rules
-windowrulev2 = opacity 0.90 0.90, class:^(kitty)$
-windowrulev2 = opacity 0.90 0.90, class:^(alacritty)$
+windowrulev2 = opacity 0.90 0.90, class:^(Alacritty)$
+windowrulev2 = opacity 0.95 0.95, class:^(org.gnome.Nautilus)$
 EOF
 
 echo -e "${GREEN}Created: windowrules.conf${NC}"
@@ -394,7 +399,9 @@ cat > ~/.config/waybar/config << 'EOF'
             "car": "",
             "default": ["", "", ""]
         },
-        "on-click": "pavucontrol"
+        "on-click": "pamixer -t",
+        "on-scroll-up": "pamixer -i 5",
+        "on-scroll-down": "pamixer -d 5"
     },
 
     "tray": {

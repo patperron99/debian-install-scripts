@@ -23,38 +23,36 @@ if [ -f /etc/debian_version ]; then
 fi
 
 # Array of packages available in Debian Testing/Sid repositories
+# Based on Omarchy's Wayland-native package selection
 declare -a AVAILABLE_PACKAGES=(
-    # Wayland core
-    "xwayland"
-
     # Wayland utilities
     "waybar"
-    "wofi"
-    "dunst"
     "swaybg"
-    "swaylock"
-    "swayidle"
     "grim"
     "slurp"
     "wl-clipboard"
 
-    # Audio
+    # Notifications (Wayland-native)
+    "mako-notifier"
+
+    # Audio (PipeWire only, no GUI mixers that pull desktop deps)
     "pipewire"
     "pipewire-pulse"
-    "pipewire-audio"
+    "pipewire-alsa"
     "wireplumber"
-    "pavucontrol"
+    "pamixer"
 
-    # Network and Bluetooth
-    "network-manager"
-    "network-manager-gnome"
-    "blueman"
+    # Network (iwd instead of NetworkManager to avoid GNOME deps)
+    "iwd"
 
-    # File manager and utilities
-    "thunar"
-    "thunar-archive-plugin"
-    "thunar-volman"
-    "file-roller"
+    # File manager (Wayland-native)
+    "nautilus"
+    "nautilus-extension-gnome-terminal"
+    "gnome-disk-utility"
+
+    # Document viewers (Wayland-capable)
+    "evince"
+    "imv"
 
     # Fonts
     "fonts-noto"
@@ -62,20 +60,29 @@ declare -a AVAILABLE_PACKAGES=(
     "fonts-font-awesome"
     "fonts-jetbrains-mono"
 
-    # Terminal emulators
-    "kitty"
+    # Terminal emulators (Wayland-native)
     "alacritty"
 
     # System utilities
     "brightnessctl"
     "playerctl"
-    "polkitd"
-    "qt5ct"
-    "kvantum"
+    "policykit-1-gnome"
 
-    # Additional tools
-    "rofi"
-    "mako-notifier"
+    # Qt Wayland support
+    "qt5-wayland"
+    "qt6-wayland"
+
+    # Display manager with Wayland support
+    "sddm"
+
+    # Additional Wayland tools
+    "mpv"
+    "imagemagick"
+
+    # System tools (no desktop deps)
+    "avahi-daemon"
+    "gvfs-backends"
+    "gnome-keyring"
 )
 
 # Packages available in Sid/Unstable (may need sid sources)
@@ -84,13 +91,13 @@ declare -a SID_PACKAGES=(
     "xdg-desktop-portal-hyprland"
 )
 
-# Packages that need to be compiled from source
+# Packages that need to be compiled from source (from Omarchy ecosystem)
 declare -a SOURCE_ONLY_PACKAGES=(
-    "hyprpaper"
     "hypridle"
     "hyprlock"
-    "swww"
-    "cliphist"
+    "hyprsunset"
+    "hyprpicker"
+    "swayosd"
 )
 
 # Build dependencies for compilation
@@ -227,17 +234,33 @@ fi
 
 echo ""
 echo "Enabling essential services..."
-sudo systemctl enable NetworkManager
+sudo systemctl enable iwd
 sudo systemctl enable bluetooth
+sudo systemctl enable sddm
+sudo systemctl enable avahi-daemon
 
 echo ""
 echo "Setting up Hyprland configuration directory..."
 mkdir -p ~/.config/hypr
 mkdir -p ~/.config/waybar
-mkdir -p ~/.config/wofi
 mkdir -p ~/.config/mako
-mkdir -p ~/.config/kitty
 mkdir -p ~/.config/alacritty
+
+# Configure iwd for network management
+echo ""
+echo "Configuring iwd for network management..."
+sudo mkdir -p /etc/iwd
+cat << 'EOF' | sudo tee /etc/iwd/main.conf > /dev/null
+[General]
+EnableNetworkConfiguration=true
+NameResolvingService=systemd
+
+[Network]
+EnableIPv6=true
+RoutePriorityOffset=300
+EOF
+
+echo -e "${GREEN}✓ iwd configured${NC}"
 
 # Print installation summary
 print_summary

@@ -125,9 +125,9 @@ echo -e "${YELLOW}Select packages to compile:${NC}"
 echo "1. Hyprland (window manager)"
 echo "2. hyprlock (lock screen)"
 echo "3. hypridle (idle daemon)"
-echo "4. hyprpaper (wallpaper manager)"
-echo "5. swww (animated wallpapers)"
-echo "6. cliphist (clipboard manager)"
+echo "4. hyprsunset (night light/blue light filter)"
+echo "5. hyprpicker (color picker)"
+echo "6. swayosd (on-screen display for volume/brightness)"
 echo "7. All of the above"
 echo ""
 echo -e "${YELLOW}Enter your choice (1-7):${NC}"
@@ -205,18 +205,26 @@ if [[ "$compile_choice" =~ ^[37]$ ]]; then
     }
 fi
 
-# Compile hyprpaper
+# Compile hyprsunset
 if [[ "$compile_choice" =~ ^[47]$ ]]; then
-    compile_cmake "https://github.com/hyprwm/hyprpaper.git" "hyprpaper" || {
-        echo -e "${RED}Failed to compile hyprpaper${NC}"
-        FAILED_PACKAGES+=("hyprpaper")
+    compile_cmake "https://github.com/hyprwm/hyprsunset.git" "hyprsunset" || {
+        echo -e "${RED}Failed to compile hyprsunset${NC}"
+        FAILED_PACKAGES+=("hyprsunset")
     }
 fi
 
-# Compile swww
+# Compile hyprpicker
 if [[ "$compile_choice" =~ ^[57]$ ]]; then
+    compile_cmake "https://github.com/hyprwm/hyprpicker.git" "hyprpicker" || {
+        echo -e "${RED}Failed to compile hyprpicker${NC}"
+        FAILED_PACKAGES+=("hyprpicker")
+    }
+fi
+
+# Compile swayosd
+if [[ "$compile_choice" =~ ^[67]$ ]]; then
     echo ""
-    echo -e "${GREEN}Compiling swww (Rust)...${NC}"
+    echo -e "${GREEN}Compiling swayosd (Rust)...${NC}"
 
     # Check if Rust is installed
     if ! command -v cargo &> /dev/null; then
@@ -225,39 +233,40 @@ if [[ "$compile_choice" =~ ^[57]$ ]]; then
         source "$HOME/.cargo/env"
     fi
 
-    if [ -d "swww" ]; then
+    if [ -d "swayosd" ]; then
         echo -e "${YELLOW}Directory exists, updating...${NC}"
-        cd swww || exit 1
+        cd swayosd || exit 1
         git pull
     else
         echo "Cloning repository..."
-        git clone "https://github.com/LGFae/swww.git" swww || exit 1
-        cd swww || exit 1
+        git clone "https://github.com/ErikReider/SwayOSD.git" swayosd || exit 1
+        cd swayosd || exit 1
     fi
 
-    echo "Building with Cargo..."
-    cargo build --release || {
-        echo -e "${RED}Failed to compile swww${NC}"
-        FAILED_PACKAGES+=("swww")
+    echo "Building with Meson..."
+    meson setup build || {
+        echo -e "${RED}Failed to setup swayosd build${NC}"
+        FAILED_PACKAGES+=("swayosd")
         cd "$BUILD_DIR" || exit 1
     }
 
-    if [ -f "target/release/swww" ]; then
-        echo "Installing..."
-        sudo install -Dm755 target/release/swww "$INSTALL_PREFIX/bin/swww"
-        sudo install -Dm755 target/release/swww-daemon "$INSTALL_PREFIX/bin/swww-daemon"
-        echo -e "${GREEN}✓ swww compiled and installed${NC}"
+    ninja -C build || {
+        echo -e "${RED}Failed to compile swayosd${NC}"
+        FAILED_PACKAGES+=("swayosd")
+        cd "$BUILD_DIR" || exit 1
+    }
+
+    echo "Installing..."
+    sudo ninja -C build install || {
+        echo -e "${RED}Failed to install swayosd${NC}"
+        FAILED_PACKAGES+=("swayosd")
+    }
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ swayosd compiled and installed${NC}"
     fi
 
     cd "$BUILD_DIR" || exit 1
-fi
-
-# Compile cliphist
-if [[ "$compile_choice" =~ ^[67]$ ]]; then
-    compile_go "https://github.com/sentriz/cliphist.git" "cliphist" "cliphist" || {
-        echo -e "${RED}Failed to compile cliphist${NC}"
-        FAILED_PACKAGES+=("cliphist")
-    }
 fi
 
 # Update dynamic linker cache
