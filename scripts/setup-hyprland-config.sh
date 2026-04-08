@@ -287,8 +287,8 @@ exec-once = waybar
 # Notification daemon
 exec-once = mako
 
-# Polkit agent (GNOME version for Wayland)
-exec-once = /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+# Polkit agent (Hyprland native)
+exec-once = hyprpolkitagent
 
 # SwayOSD (volume/brightness OSD) - if compiled
 exec-once = swayosd-server

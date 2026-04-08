@@ -29,9 +29,9 @@ Cette version des scripts est basée sur les packages utilisés par **Omarchy** 
 | `mako-notifier` | Notifications | Wayland natif |
 | `evince` | Lecteur PDF | GNOME mais Wayland natif |
 | `imv` | Visionneuse images | Wayland natif |
-| `policykit-1-gnome` | Authentification | Wayland support |
+| `hyprpolkitagent` | Authentification | Wayland natif (Hyprland) |
 | `sddm` | Display manager | Wayland support |
-| `qt5-wayland` | Support Qt Wayland | Pour apps Qt |
+| `qtwayland5` | Support Qt Wayland | Pour apps Qt |
 | `qt6-wayland` | Support Qt6 Wayland | Pour apps Qt6 |
 | `avahi-daemon` | mDNS/zeroconf | Services réseau |
 | `gvfs-backends` | Virtual filesystems | SMB, MTP, etc. |

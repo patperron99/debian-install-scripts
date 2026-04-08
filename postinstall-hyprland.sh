@@ -54,11 +54,11 @@ declare -a BASE_PACKAGES=(
     # Media control
     "playerctl"
 
-    # Polkit agent (Wayland-compatible)
-    "policykit-1-gnome"
+    # Polkit agent (Wayland-native)
+    "hyprpolkitagent"
 
     # Qt Wayland support
-    "qt5-wayland"
+    "qtwayland5"
     "qt6-wayland"
 
     # Build tools

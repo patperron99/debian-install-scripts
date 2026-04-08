@@ -66,10 +66,10 @@ declare -a AVAILABLE_PACKAGES=(
     # System utilities
     "brightnessctl"
     "playerctl"
-    "policykit-1-gnome"
+    "hyprpolkitagent"
 
     # Qt Wayland support
-    "qt5-wayland"
+    "qtwayland5"
     "qt6-wayland"
 
     # Display manager with Wayland support
