@@ -20,7 +20,7 @@ declare -a EXTRA_PACKAGES=(
     "flatpak"
 
     # File manager + disk tools
-    "thunar"
+    "nemo"
     "gnome-disk-utility"
     "gnome-calculator"
 
@@ -35,8 +35,8 @@ declare -a EXTRA_PACKAGES=(
 
     # Avahi / GVFS
     "avahi-daemon"
-    "gvfs-backends"
-    "gnome-keyring"
+    "gvfs"
+    "libsecret-1-0"
 
     # Misc
     "imagemagick"

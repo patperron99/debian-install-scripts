@@ -81,8 +81,8 @@ declare -a AVAILABLE_PACKAGES=(
 
     # System tools (no desktop deps)
     "avahi-daemon"
-    "gvfs-backends"
-    "gnome-keyring"
+    "gvfs"
+    "libsecret-1-0"
 )
 
 # Packages available in Sid/Unstable (may need sid sources)

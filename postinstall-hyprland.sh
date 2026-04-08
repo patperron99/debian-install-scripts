@@ -39,7 +39,6 @@ declare -a BASE_PACKAGES=(
 
     # Network
     "network-manager"
-    "network-manager-gnome"
 
     # Bluetooth
     "blueman"
