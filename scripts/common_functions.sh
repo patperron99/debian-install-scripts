@@ -41,7 +41,4 @@ print_summary() {
         printf '%s\n' "${FAILED_PACKAGES[@]}"
     fi
 
-    echo -e "\n${YELLOW}Next steps:${NC}"
-    echo "1. Reboot your system"
-    echo "2. Configure your desktop environment settings from scratch or from your Dotfiles"
 }

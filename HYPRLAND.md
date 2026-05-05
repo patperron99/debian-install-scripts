@@ -2,6 +2,8 @@
 
 Guide d'installation de Hyprland sur Debian Testing/Sid avec configuration inspirée d'Omarchy.
 
+Tous les packages sont installés via APT — aucune compilation requise.
+
 ## Prérequis
 
 - Debian Testing (Forky) ou Sid (Unstable)
@@ -11,104 +13,45 @@ Guide d'installation de Hyprland sur Debian Testing/Sid avec configuration inspi
 ## Scripts disponibles
 
 ### 1. `scripts/install-hyprland.sh`
-Script principal d'installation avec deux options :
-- **Option 1** : Installation depuis les dépôts Sid/Unstable (rapide, recommandé)
-- **Option 2** : Compilation depuis les sources (plus long, versions récentes)
+Installation complète de l'écosystème Hyprland depuis les dépôts APT.
+Les sources Sid sont ajoutées automatiquement si nécessaire, avec pinning APT configuré.
 
-### 2. `scripts/compile-hyprland-sources.sh`
-Script de compilation des packages depuis les sources GitHub. Peut être exécuté indépendamment.
-
-### 3. `scripts/setup-hyprland-config.sh`
+### 2. `scripts/setup-hyprland-config.sh`
 Génère une configuration modulaire Hyprland inspirée d'Omarchy.
 
 ## Installation rapide
 
-### Méthode 1 : Depuis les dépôts (recommandé)
-
 ```bash
-# 1. Ajouter les sources Sid (si nécessaire)
-echo 'deb http://deb.debian.org/debian/ sid main contrib non-free' | sudo tee /etc/apt/sources.list.d/sid.list
-
-# 2. Configurer les priorités APT (optionnel mais recommandé)
-sudo tee /etc/apt/preferences.d/sid.pref << EOF
-Package: *
-Pin: release a=testing
-Pin-Priority: 900
-
-Package: *
-Pin: release a=sid
-Pin-Priority: 100
-EOF
-
-# 3. Lancer l'installation
-sudo apt update
+# 1. Lancer l'installation (sources Sid ajoutées automatiquement si besoin)
 bash scripts/install-hyprland.sh
-# Sélectionner l'option 1
-
-# 4. Configurer Hyprland
-bash scripts/setup-hyprland-config.sh
-```
-
-### Méthode 2 : Compilation depuis sources
-
-```bash
-# 1. Lancer l'installation
-bash scripts/install-hyprland.sh
-# Sélectionner l'option 2
 
 # 2. Configurer Hyprland
 bash scripts/setup-hyprland-config.sh
 ```
 
-### Méthode 3 : Compilation manuelle
-
-```bash
-# Installer uniquement les packages des dépôts
-bash scripts/install-hyprland.sh
-# Sélectionner l'option 1
-
-# Compiler uniquement certains packages
-bash scripts/compile-hyprland-sources.sh
-# Choisir les packages à compiler
-
-# Configurer
-bash scripts/setup-hyprland-config.sh
-```
-
 ## Statut des packages
 
-### ✅ Disponibles dans Debian Testing/Sid
+### ✅ Disponibles dans Debian Testing (Forky)
 
-Ces packages s'installent directement via APT :
-
-- **Wayland** : xwayland
-- **Utilitaires** : waybar, wofi, dunst, rofi
-- **Sway** : swaybg, swaylock, swayidle
-- **Screenshots** : grim, slurp
-- **Clipboard** : wl-clipboard
-- **Audio** : pipewire, pipewire-pulse, wireplumber, pavucontrol
-- **Réseau** : network-manager, blueman
-- **Fichiers** : thunar + plugins
+- **Utilitaires Wayland** : waybar, wofi, swaybg, grim, slurp, wl-clipboard
+- **Notifications** : mako-notifier
+- **Audio** : pipewire, pipewire-pulse, wireplumber, pamixer
+- **Réseau** : iwd
+- **Fichiers** : nautilus, gnome-disk-utility
+- **Visionneuses** : evince, imv
 - **Polices** : fonts-noto, fonts-font-awesome, fonts-jetbrains-mono
-- **Terminaux** : kitty, alacritty
-- **Système** : brightnessctl, playerctl, polkitd
+- **Terminal** : alacritty
+- **Système** : brightnessctl, playerctl, hyprpolkitagent, sddm
+- **Médias** : mpv, imagemagick
 
-### ⚠️ Disponibles uniquement dans Sid
-
-Ces packages nécessitent les sources Sid :
+### ⚠️ Disponibles depuis Sid (ajoutés automatiquement)
 
 - `hyprland`
 - `xdg-desktop-portal-hyprland`
-
-### 🔨 Nécessitent compilation
-
-Ces packages doivent être compilés depuis les sources :
-
-- `hyprpaper` (gestionnaire de fond d'écran)
-- `hypridle` (daemon de veille)
 - `hyprlock` (écran de verrouillage)
-- `swww` (fonds d'écran animés)
-- `cliphist` (historique du presse-papiers)
+- `hypridle` (daemon de veille)
+- `hyprpicker` (pipette couleur)
+- `swayosd` (OSD volume/luminosité)
 
 ## Structure de configuration
 
@@ -133,11 +76,21 @@ La configuration est modulaire, inspirée d'Omarchy :
 ## Raccourcis clavier par défaut
 
 ### Applications
-- `SUPER + Return` - Terminal (kitty)
+- `SUPER + Return` - Terminal (alacritty)
 - `SUPER + D` - Lanceur d'applications (wofi)
-- `SUPER + E` - Gestionnaire de fichiers (thunar)
+- `SUPER + E` - Gestionnaire de fichiers (nautilus)
 - `SUPER + Q` - Fermer la fenêtre active
-- `SUPER + L` - Verrouiller l'écran
+- `SUPER + L` - Verrouiller l'écran (hyprlock)
+- `SUPER + B` - Bluetooth (blueman-manager)
+- `SUPER + SHIFT + A` - Volume (pavucontrol)
+
+### Système
+- `SUPER + SHIFT + P` - Menu power (lock/logout/suspend/reboot/shutdown)
+- `SUPER + W` - Prochain wallpaper (cycle)
+- `SUPER + SHIFT + T` - Sélecteur de thème (Catppuccin / Tokyo Night / Gruvbox / Nord / Rose Pine)
+- `SUPER + C` - Historique presse-papiers (cliphist + wofi)
+- `SUPER + SHIFT + C` - Pipette couleur (hyprpicker)
+- `SUPER + SHIFT + R` - Enregistrement écran (wf-recorder toggle)
 
 ### Fenêtres
 - `SUPER + F` - Plein écran
@@ -200,26 +153,18 @@ cat /var/log/hyprland-install.log
 
 # Vérifier que Hyprland est installé
 which Hyprland
-
-# Tester en mode debug
 Hyprland --version
 ```
 
 ### Packages manquants après installation
 ```bash
-# Recompiler manuellement
-bash scripts/compile-hyprland-sources.sh
-
-# Ou installer depuis Sid
-sudo apt install -t sid hyprland xdg-desktop-portal-hyprland
+# Installer depuis Sid explicitement
+sudo apt install -t sid hyprland xdg-desktop-portal-hyprland hyprlock hypridle
 ```
 
 ### Waybar ne s'affiche pas
 ```bash
-# Vérifier le processus
 ps aux | grep waybar
-
-# Relancer
 killall waybar
 waybar &
 ```
@@ -241,7 +186,6 @@ decoration {
 ### Écran noir après login
 ```bash
 # Depuis un autre TTY (Ctrl+Alt+F2)
-# Vérifier les logs Hyprland
 cat ~/.local/share/hyprland/hyprland.log
 
 # Réinitialiser la config
@@ -251,41 +195,18 @@ bash scripts/setup-hyprland-config.sh
 
 ## Mise à jour
 
-### Packages des dépôts
 ```bash
 sudo apt update
 sudo apt upgrade
 ```
 
-### Packages compilés
-```bash
-# Recompiler depuis les sources
-cd ~/.local/src/hyprland-build
-bash ~/Work/debian-install-scripts/scripts/compile-hyprland-sources.sh
-```
-
 ## Désinstallation
 
-### Packages APT
 ```bash
-sudo apt remove hyprland waybar wofi # etc.
-```
+# Packages APT
+sudo apt remove hyprland waybar wofi hyprlock hypridle
 
-### Packages compilés
-```bash
-# Supprimer les binaires
-sudo rm /usr/local/bin/{Hyprland,hyprlock,hypridle,hyprpaper,swww,cliphist}
-
-# Supprimer les bibliothèques
-sudo rm -rf /usr/local/lib/libhypr*
-sudo ldconfig
-
-# Supprimer les sources
-rm -rf ~/.local/src/hyprland-build
-```
-
-### Configuration
-```bash
+# Configuration
 rm -rf ~/.config/hypr
 rm -rf ~/.config/waybar
 ```
@@ -299,10 +220,9 @@ rm -rf ~/.config/waybar
 
 ## Inspirations
 
-Cette configuration est inspirée de :
-- **Omarchy** - Structure modulaire et organisation
-- **JaKooLit/Debian-Hyprland** - Scripts de compilation
-- **Hyprland defaults** - Configuration de base
+- **Omarchy** — Structure modulaire et organisation
+- **JaKooLit/Debian-Hyprland** — Scripts d'installation
+- **Hyprland defaults** — Configuration de base
 
 ## Licence
 

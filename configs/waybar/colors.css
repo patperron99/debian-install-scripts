@@ -1,0 +1,15 @@
+/* Nord — default theme palette */
+@define-color fg               #D8DEE9;
+@define-color fg_bright        #eceff4;
+@define-color border           #4c566a;
+@define-color ws_active_bg     #2e3440;
+@define-color ws_active_fg     #5e81ac;
+@define-color ws_active_border #d08770;
+@define-color urgent           #BF616A;
+@define-color urgent_text      #2E3440;
+@define-color tray_bg          #3b4252;
+@define-color tray_border      #a3be8c;
+@define-color separator        #5E81AC;
+@define-color updates_ok       #A3BE8C;
+@define-color updates_avail    #BF616A;
+@define-color window_border    #88c0d0;

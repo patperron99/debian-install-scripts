@@ -1,0 +1,142 @@
+#!/bin/bash
+set -uo pipefail
+
+source "$(dirname "$0")/common_functions.sh"
+
+echo -e "${GREEN}=== Wallpaper Setup ===${NC}"
+echo "Configures swaybg — simple Wayland wallpaper utility"
+echo ""
+
+WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
+AUTOSTART_CONF="$HOME/.config/hypr/autostart.conf"
+
+# Ensure swaybg is installed
+if ! command -v swaybg &>/dev/null; then
+    echo -e "${YELLOW}swaybg not found. Installing...${NC}"
+    if check_package "swaybg"; then
+        install_package "swaybg"
+    else
+        echo -e "${RED}swaybg not available in APT.${NC}"
+        exit 1
+    fi
+fi
+
+# Ensure wallpaper directory exists
+mkdir -p "$WALLPAPER_DIR"
+
+# List available wallpapers
+shopt -s nullglob
+WALLPAPERS=("$WALLPAPER_DIR"/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP})
+shopt -u nullglob
+
+if [ ${#WALLPAPERS[@]} -eq 0 ]; then
+    echo -e "${YELLOW}No wallpapers found in $WALLPAPER_DIR${NC}"
+    echo ""
+    echo "Add wallpaper images (.jpg, .png, .webp) to:"
+    echo "  $WALLPAPER_DIR"
+    echo ""
+    echo "Then re-run this script."
+    exit 0
+fi
+
+# Detect currently active wallpaper from autostart.conf
+CURRENT_WALLPAPER=""
+if [ -f "$AUTOSTART_CONF" ]; then
+    CURRENT_WALLPAPER=$(grep -m1 'exec-once = swaybg' "$AUTOSTART_CONF" \
+        | grep -o '\-i [^ ]*' | cut -d' ' -f2)
+fi
+
+# Show available wallpapers
+echo "Available wallpapers in $WALLPAPER_DIR:"
+echo ""
+for i in "${!WALLPAPERS[@]}"; do
+    label="  $((i+1))) $(basename "${WALLPAPERS[$i]}")"
+    if [ "${WALLPAPERS[$i]}" = "$CURRENT_WALLPAPER" ]; then
+        label+="  ${GREEN}[active]${NC}"
+    fi
+    echo -e "$label"
+done
+echo ""
+
+echo -e "${YELLOW}Enter wallpaper number (1-${#WALLPAPERS[@]}):${NC}"
+read -r selection
+while ! [[ "$selection" =~ ^[0-9]+$ ]] || \
+      [ "$selection" -lt 1 ] || [ "$selection" -gt "${#WALLPAPERS[@]}" ]; do
+    echo -e "${YELLOW}Please enter a number between 1 and ${#WALLPAPERS[@]}:${NC}"
+    read -r selection
+done
+
+SELECTED_WALLPAPER="${WALLPAPERS[$((selection-1))]}"
+echo ""
+echo -e "${GREEN}Selected: $(basename "$SELECTED_WALLPAPER")${NC}"
+
+# Select display mode
+echo ""
+echo "Display modes:"
+echo "  1) fill    — crop to fill screen (recommended)"
+echo "  2) fit     — letterbox to fit screen"
+echo "  3) stretch — stretch to fill (may distort)"
+echo "  4) tile    — tile the image"
+echo "  5) center  — center without scaling"
+echo ""
+echo -e "${YELLOW}Select mode (1-5, default 1):${NC}"
+read -r mode_sel
+case "$mode_sel" in
+    2) MODE="fit" ;;
+    3) MODE="stretch" ;;
+    4) MODE="tile" ;;
+    5) MODE="center" ;;
+    *) MODE="fill" ;;
+esac
+echo -e "${GREEN}Mode: $MODE${NC}"
+
+# Update autostart.conf
+if [ -f "$AUTOSTART_CONF" ]; then
+    if grep -q 'exec-once = swaybg' "$AUTOSTART_CONF"; then
+        sed -i "s|exec-once = swaybg.*|exec-once = swaybg -i $SELECTED_WALLPAPER -m $MODE|" "$AUTOSTART_CONF"
+        echo -e "${GREEN}autostart.conf updated${NC}"
+    else
+        printf '\n# Wallpaper\nexec-once = swaybg -i %s -m %s\n' "$SELECTED_WALLPAPER" "$MODE" >> "$AUTOSTART_CONF"
+        echo -e "${GREEN}swaybg added to autostart.conf${NC}"
+    fi
+fi
+
+# Apply immediately
+echo ""
+_apply_swaybg() {
+    local wl="$1" xdg="$2"
+    pkill swaybg 2>/dev/null || true
+    sleep 0.3
+    env WAYLAND_DISPLAY="$wl" XDG_RUNTIME_DIR="$xdg" \
+        swaybg -i "$SELECTED_WALLPAPER" -m "$MODE" &
+    disown
+}
+
+if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    _apply_swaybg "$WAYLAND_DISPLAY" "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    echo -e "${GREEN}Wallpaper applied${NC}"
+elif pidof swaybg > /dev/null 2>&1; then
+    SWAYBG_PID=$(pidof swaybg | awk '{print $1}')
+    SWAYBG_ENV=$(cat /proc/"$SWAYBG_PID"/environ 2>/dev/null | tr '\0' '\n')
+    WL_DISP=$(printf '%s' "$SWAYBG_ENV" | grep '^WAYLAND_DISPLAY=' | cut -d= -f2-)
+    XDG_RT=$(printf '%s' "$SWAYBG_ENV" | grep '^XDG_RUNTIME_DIR=' | cut -d= -f2-)
+    if [ -n "$WL_DISP" ] && [ -n "$XDG_RT" ]; then
+        _apply_swaybg "$WL_DISP" "$XDG_RT"
+        echo -e "${GREEN}Wallpaper applied${NC}"
+    else
+        echo -e "${YELLOW}Could not read Wayland env — run in your Hyprland terminal:${NC}"
+        echo "  pkill swaybg; swaybg -i $SELECTED_WALLPAPER -m $MODE &"
+    fi
+elif [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+    swaybg -i "$SELECTED_WALLPAPER" -m "$MODE" &
+    disown
+    echo -e "${GREEN}swaybg started${NC}"
+else
+    echo -e "${YELLOW}No active Wayland session detected.${NC}"
+    echo "Wallpaper will take effect on next login."
+fi
+
+echo ""
+echo -e "${GREEN}Done.${NC}"
+echo "To change wallpaper: bash scripts/setup-wallpaper.sh"
+echo "To add more wallpapers: copy images to $WALLPAPER_DIR"

@@ -1,0 +1,188 @@
+{
+  "output": "eDP-1",
+  "layer": "top",
+  "position": "top",
+  "modules-left": ["hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": [
+    "idle_inhibitor",
+    "custom/powerprofile",
+    "custom/updates",
+    "pulseaudio",
+    "cpu",
+    "memory",
+    "network",
+    "custom/vpn",
+    "bluetooth",
+    "backlight",
+    "battery",
+    "tray"
+    ],
+  "margin-top": 4,
+  "margin-left": 4,
+  "margin-right": 4,
+
+  "custom/separator": {
+      "format": "/",
+      "interval": "once",
+      "tooltip": false
+  },
+
+
+  "hyprland/workspaces": {
+    "all-outputs": true,
+    "format": "{name}",
+    "on-click": "activate",
+    "sort-by-number": true
+  },
+
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-bluetooth": "{icon}",
+    "format-muted": " ",
+    "format-icons": {
+        "headphone": " ",
+        "hands-free": "",
+        "headset": "",
+        "phone": " ",
+        "phone-muted": " ",
+        "portable": " ",
+        "car": " ",
+        "default": [" ", " "]
+    },
+    "tooltip-format": "Volume: {volume}%",
+    "tooltip-format-bluetooth": "Volume: {volume}%",
+    "scroll-step": 1,
+    "on-click": "pavucontrol",
+    "ignored-sinks": ["Easy Effects Sink"]
+  },
+
+  "custom/updates": {
+    "exec": "~/.local/bin/check-updates.sh",
+    "return-type": "json",
+    "interval": 3600,
+    "format": "{}",
+    "on-click": "alacritty -e ~/.local/bin/update-system.sh",
+    "tooltip": true
+  },
+
+  "custom/vpn": {
+    "format": "{}",
+    "interval": 5,
+    "exec": "~/.config/waybar/scripts/vpn_status.sh",
+    "on-click": "~/.config/waybar/scripts/vpn_menu.sh",
+    "tooltip": "vpn"
+  },
+
+  "cpu": {
+    "format": "{icon}",
+    "format-icons": "",
+    "tooltip": true,
+    "tooltip-format": "CPU: {usage}%",
+    "interval": 2
+  },
+
+  "memory": {
+    "format": "󰍛",
+    "tooltip": true,
+    "tooltip-format": "RAM: {used:0.1f}/{total:0.1f} GiB ({percentage}%)",
+    "interval": 2
+  },
+
+  "backlight": {
+      "format": "{icon}",
+      "format-icons": ["󰃚", "󰃛", "󰃜", "󰃝", "󰃞", "󰃟", "󰃠"], // Brightness icons from low to high
+      "tooltip": true,
+      "tooltip-format": "Brightness: {percent}%",
+      "on-scroll-up": "brightnessctl set 5%+",
+      "on-scroll-down": "brightnessctl set 5%-",
+  },
+
+  "battery": {
+      "interval": 2,
+      "format": "{icon}",
+      "format-charging": "<span color='#89b4fa'>{icon}</span>",
+      "format-plugged": "<span color='#a6e3a1'>{icon}</span>",
+      "format-full": "<span color='#a6e3a1'>{icon}</span>",
+      "format-alt": "{timeTo} {icon}",
+      "states": {
+          "warning": 30,
+          "critical": 15
+      },
+      "format-icons": {
+          "charging": ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"], // Charging animation/steps
+          "default": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]  // Discharging steps
+      },
+      "tooltip": true,
+      "tooltip-format": "{capacity}% — {timeTo} ({power} W)"
+  },
+
+  "clock": {
+    "format-alt": "{:%H:%M}",
+    "format": "{:%A, %B %d | %R}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months":   "<span color='#8FBCBB'><b>{}</b></span>",   // Frost (cyan)
+        "days":     "<span color='#D8DEE9'><b>{}</b></span>",   // Snow Storm (white)
+        "weeks":    "<span color='#A3BE8C'><b>W{}</b></span>",  // Aurora (green)
+        "weekdays": "<span color='#88C0D0'><b>{}</b></span>",   // Frost (blue)
+        "today":    "<span color='#BF616A'><b><u>{}</u></b></span>" // Aurora (red)
+      }
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
+  },
+
+  "tray": {
+    "spacing": 10
+  },
+
+  "network": {
+    "interface": "wlan0",
+    "format-wifi": "{icon}",
+    "format-ethernet": "󰊊",
+    "format-disconnected": "󰿉",
+    "format-icons": ["󰤟", "󰤢", "󰤥", "󰤨"],
+    "tooltip-format-wifi": "{ifname} — {essid} ({signalStrength}%)\n{ipaddr}/{cidr}",
+    "tooltip-format-ethernet": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-disconnected": "Disconnected",
+    "max-length": 40,
+    "on-click": "~/.config/waybar/scripts/wifi_menu.sh"
+  },
+
+  "bluetooth": {
+  	"format": "{icon}",
+    "format-icons": "",
+	  "format-connected": "{icon}",
+	  "format-connected-battery": "{icon}",
+	  // "format-device-preference": [ "device1", "device2" ], // preference list deciding the displayed device
+	  "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
+	  "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
+	  "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+	  "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%"
+  },
+
+  "custom/powerprofile": {
+    "exec": "~/.config/waybar/scripts/power_profile.sh",
+    "return-type": "json",
+    "interval": 5,
+    "on-click": "~/.config/waybar/scripts/power_menu.sh"
+  },
+
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+        "activated": " ",
+        "deactivated": " "
+    }
+  }
+}
+

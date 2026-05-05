@@ -207,4 +207,36 @@ arch-chroot /mnt ./setup.sh "$RELEASE"
 
 # Cleanup
 rm /mnt/setup.sh /mnt/selected_disk
+
+# Copy this repo to the new system for first-boot post-install
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -d "$SCRIPT_DIR" ]; then
+    log "Copying install scripts to /opt/debian-install-scripts..."
+    cp -r "$SCRIPT_DIR" /mnt/opt/debian-install-scripts
+    chmod -R 755 /mnt/opt/debian-install-scripts
+
+    # Create a first-boot systemd service
+    cat << 'SVCEOF' > /mnt/etc/systemd/system/first-boot-setup.service
+[Unit]
+Description=First-boot Hyprland post-install setup
+After=network.target
+ConditionPathExists=/opt/debian-install-scripts/postinstall-hyprland.sh
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/debian-install-scripts/postinstall-hyprland.sh
+ExecStartPost=/bin/systemctl disable first-boot-setup.service
+RemainAfterExit=no
+StandardInput=tty
+TTYPath=/dev/tty1
+StandardOutput=tty
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+    arch-chroot /mnt systemctl enable first-boot-setup.service 2>/dev/null || true
+    log "First-boot service registered — postinstall-hyprland.sh will run on first login."
+fi
+
 log "Installation completed! You can now reboot into your new system."

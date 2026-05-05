@@ -1,0 +1,8 @@
+width=600
+height=400
+prompt=Launch…
+allow_images=true
+allow_markup=true
+insensitive=true
+no_actions=true
+show=drun

@@ -1,151 +1,298 @@
-# Script Documentation
+# Debian Install Scripts
 
-This repository contains two essential Bash scripts for setting up and configuring Debian-based systems. Below are detailed explanations for each script and their usage.
+Automation suite for fresh Debian installations with a Wayland-pure Hyprland desktop.
+
+Targets **Debian Testing (Forky)** and **Sid (Unstable)**. All packages are installed via APT — no compilation required.
+
+---
+
+## Installation
+
+### Step 1 — Boot from Debian LiveCD
+
+```bash
+apt install git
+git clone https://github.com/patperron99/debian-install-scripts
+cd debian-install-scripts
+sudo bash debian-install-fresh.sh
+# Reboot into the new system
+```
+
+`debian-install-fresh.sh` handles disk setup: LUKS encryption, Btrfs subvolumes (`@`, `@home`, `@snapshots`), debootstrap, GRUB, crypttab, and fstab.
+
+### Step 2 — First boot (minimal Debian console)
+
+```bash
+sudo apt install git
+git clone https://github.com/patperron99/debian-install-scripts
+cd debian-install-scripts
+bash postinstall-hyprland.sh
+```
+
+The interactive menu lets you run everything at once or step by step:
+
+```
+  a) Install everything (recommended)
+  ────────────────────────────────────
+  1) Core + Hyprland packages
+  2) Deploy configuration files
+  3) Extras  (neovim, tmux, fonts, wlogout)
+  4) Theme   (GTK, cursor, Neovim/LazyVim)
+  5) Lock screen  (hyprlock + hypridle)
+  6) Wallpapers
+  7) Auto-update timer
+  8) Multi-monitor layout
+  ────────────────────────────────────
+  9) Verify installation
+```
+
+Reboot when done — at SDDM, select **Hyprland**.
+
+---
+
+## Workflow
+
+```
+debian-install-fresh.sh
+  └── postinstall-hyprland.sh               # Interactive menu
+        ├── scripts/install-hyprland.sh     # Packages from APT (Forky + Sid)
+        ├── scripts/setup-hyprland-config.sh# Deploy all configs
+        ├── scripts/install-extras-hyprland.sh # Dev tools, fonts, TPM, Flatpak
+        ├── scripts/setup-theme.sh          # GTK + cursor + Neovim
+        ├── scripts/setup-hyprlock.sh       # Lock screen
+        ├── scripts/fetch-wallpapers.sh     # Download wallpapers
+        ├── scripts/setup-wallpaper.sh      # Select wallpaper
+        ├── scripts/setup-auto-updates.sh   # Systemd update timer
+        ├── scripts/setup-multimonitor.sh   # Monitor layout
+        └── scripts/verify-install.sh       # Diagnostic
+```
+
+**Scripts re-runnable individually at any time:**
+
+```
+scripts/setup-wallpaper.sh       # Select wallpaper interactively
+scripts/setup-theme.sh           # GTK / cursor / Qt / Neovim theme
+scripts/setup-hyprlock.sh        # Lock screen timers
+scripts/setup-updates.sh         # Interactive system updater
+scripts/setup-auto-updates.sh    # Daily update check (systemd timer)
+scripts/setup-multimonitor.sh    # Workspace-per-monitor layout
+scripts/verify-install.sh        # PASS/FAIL diagnostic
+```
+
+**Helper scripts installed to `~/.local/bin/`:**
+
+```
+powermenu.sh      # SUPER+SHIFT+P — power menu (wlogout)
+wallpaper-next.sh # SUPER+W       — cycle wallpaper
+theme-picker.sh   # SUPER+SHIFT+T — live theme switcher (wofi)
+check-updates.sh  # Waybar badge  — APT + Flatpak update count
+```
+
+---
+
+## Configuration files deployed
+
+`setup-hyprland-config.sh` copies all configs from `configs/` into `~/.config/`:
+
+| Source | Destination | Description |
+|---|---|---|
+| `configs/hypr/` | `~/.config/hypr/` | Hyprland — modular conf files |
+| `configs/waybar/` | `~/.config/waybar/` | Status bar |
+| `configs/wofi/` | `~/.config/wofi/` | App launcher |
+| `configs/wlogout/` | `~/.config/wlogout/` | Power menu |
+| `configs/mako/` | `~/.config/mako/` | Notification daemon |
+| `configs/kanshi/` | `~/.config/kanshi/` | Multi-monitor profiles |
+| `configs/alacritty/` | `~/.config/alacritty/` | Terminal (+ themes) |
+| `configs/kitty/` | `~/.config/kitty/` | Terminal (Nord theme) |
+| `configs/tmux/` | `~/.config/tmux/` | Multiplexer (Nord + TPM) |
+| `configs/bashrc/` | `~/.bashrc` | Shell (Nord prompt, aliases) |
+| `configs/nvim/` | `~/.config/nvim/` | Neovim — LazyVim + Nord |
+
+`setup-theme.sh` writes GTK/cursor/Qt settings dynamically based on your choices.
+
+---
 
 ## Scripts
 
 ### `debian-install-fresh.sh`
 
-This script sets up a fresh Debian installation with LUKS encryption, Btrfs subvolumes, and a minimal base system. It also handles disk partitioning, cryptsetup configuration, and initial system setup in a chroot environment.
+Disk setup from a LiveCD. Prompts for target disk, sets up LUKS, Btrfs subvolumes, installs a minimal Debian base via debootstrap, configures GRUB, crypttab, and fstab.
 
-#### Features:
-- Detects available disks and allows the user to select one for installation.
-- Partitions the selected disk into EFI, boot, and root partitions.
-- Configures LUKS encryption for the root partition.
-- Sets up Btrfs subvolumes for root, home, and snapshots.
-- Installs a minimal Debian system using `debootstrap`.
-- Generates an `fstab` file and configures essential services like cryptsetup, GRUB, and network management.
-
-#### Usage:
-1. Boot your computer using a Debian LiveCD in console mode.
-2. Ensure you have an active internet connection.
-3. Clone this repository
-4. Run the script as root:
-   ```bash
-   sudo ./debian-install-fresh.sh
-   ```
-
-#### Interactive Steps:
-1. Select the target disk for installation.
-2. Confirm the destruction of existing data on the selected disk.
-3. Follow prompts for setting up root and user passwords during the chroot phase.
-
-#### Final Steps After Execution:
-- Reboot into your new Debian system.
-
----
-
-### `debian-install-packages.sh`
-
-This script automates the installation of essential packages and tools on a fresh Debian system. It includes features like package checking, error handling, and configuration setup for tmux, Neovim, and more.
-
-#### Features:
-- Installs a comprehensive list of base packages (e.g., i3-wm, polybar, tmux, git, curl).
-- Adds Debian repositories with non-free and contrib components.
-- Installs Neovim and picom from source.
-- Configures tmux with a Catppuccin theme and plugin manager.
-- Installs Flatpak and the Zen browser.
-- Enables essential system services (e.g., lightdm, NetworkManager).
-- Provides an installation summary highlighting successes and failures.
-
-#### Usage:
-Run the script as root:
 ```bash
-sudo ./debian-install-base.sh
+sudo bash debian-install-fresh.sh
 ```
 
-#### Next Steps After Execution:
-1. Reboot your system.
-2. After booting, run `tmux` and press `prefix + I` to install tmux plugins.
-3. Configure your desktop environment settings.
+---
+
+### `postinstall-hyprland.sh`
+
+Interactive menu — single entry point after first boot. Choose `a` to install everything or `1–9` for individual steps. Re-running is safe; each step is idempotent.
+
+```bash
+bash postinstall-hyprland.sh
+```
 
 ---
 
----
+### `scripts/install-hyprland.sh`
 
-### `install-hyprland.sh`
+Installs the full Hyprland ecosystem from APT. Automatically adds Sid sources if needed and pins them to prevent unintended upgrades.
 
-This script automates the installation of Hyprland window manager and its ecosystem on Debian Testing/Sid. It offers two installation methods: from repositories or compilation from source.
+**Forky:** waybar, wofi, mako-notifier, grim, slurp, kanshi, alacritty, sddm, wf-recorder, swaybg, and more.  
+**Sid:** hyprland, xdg-desktop-portal-hyprland, hyprlock, hypridle, hyprpicker, swayosd, cliphist.
 
-#### Features:
-- Detects Debian version
-- Installs available packages from Debian Testing/Sid repos
-- Optional compilation from source for latest versions
-- Modular package organization (available, sid-only, source-only)
-- Build dependencies management
-- Comprehensive error handling and logging
-
-#### Usage:
 ```bash
 bash scripts/install-hyprland.sh
 ```
 
-Choose between:
-1. Install from Sid repositories (faster, recommended)
-2. Compile from source (latest versions, takes longer)
-
-For detailed information, see [HYPRLAND.md](HYPRLAND.md) and [PACKAGE_STATUS.md](PACKAGE_STATUS.md).
-
 ---
 
-### `compile-hyprland-sources.sh`
+### `scripts/setup-hyprland-config.sh`
 
-Standalone script to compile Hyprland and related packages from their GitHub sources.
+Deploys all configuration files from `configs/` to their destinations (see table above). Backs up existing files with a `.backup` extension before overwriting.
 
-#### Features:
-- Selective compilation (choose which packages to build)
-- Automatic dependency resolution
-- Support for CMake, Meson, Go, and Rust projects
-- Installs to `/usr/local` with proper permissions
-
-#### Usage:
-```bash
-bash scripts/compile-hyprland-sources.sh
-```
-
-Select packages to compile:
-1. Hyprland (window manager + dependencies)
-2. hyprlock (lock screen)
-3. hypridle (idle daemon)
-4. hyprpaper (wallpaper manager)
-5. swww (animated wallpapers)
-6. cliphist (clipboard manager)
-7. All of the above
-
----
-
-### `setup-hyprland-config.sh`
-
-Creates a complete Hyprland configuration inspired by Omarchy's modular structure.
-
-#### Features:
-- Modular configuration files (envs, monitors, input, bindings, etc.)
-- Automatic backup of existing configs
-- Waybar configuration with sensible defaults
-- Pre-configured keybindings and window rules
-- Autostart configuration
-
-#### Usage:
 ```bash
 bash scripts/setup-hyprland-config.sh
 ```
 
-Configuration files created in:
-- `~/.config/hypr/` (Hyprland configs)
-- `~/.config/waybar/` (status bar)
+---
+
+### `scripts/install-extras-hyprland.sh`
+
+Installs developer tools and sets up language runtimes:
+
+- **Packages:** neovim, tmux, cmake, flatpak, ripgrep, fd-find, fastfetch, wlogout, and more
+- **Nerd Fonts:** JetBrainsMono, FiraCode, Hack (downloaded from GitHub releases)
+- **TPM:** Tmux Plugin Manager cloned to `~/.config/tmux/plugins/tpm`
+- **Flatpak:** Flathub remote + Zen browser
+
+```bash
+bash scripts/install-extras-hyprland.sh
+```
+
+---
+
+### `scripts/setup-theme.sh`
+
+Configures GTK theme, icon theme, cursor, Qt5ct, and Neovim.
+
+**GTK choices:** Arc-Dark, Arc, Numix-Dark, Adwaita  
+**Cursor choices:** Bibata-Modern-Classic, Breeze, Adwaita  
+**Icons:** Papirus-Dark  
+**Neovim:** LazyVim base + Nord colorscheme (`configs/nvim/lua/plugins/colorscheme.lua`)
+
+```bash
+bash scripts/setup-theme.sh
+```
+
+---
+
+### `scripts/setup-hyprlock.sh`
+
+Deploys `hyprlock.conf` and `hypridle.conf` from `configs/hypr/`, then enables hypridle in `autostart.conf`.
+
+**Idle timers:** dim at 5 min → lock at 10 min → display off at 15 min → suspend at 30 min.
+
+```bash
+bash scripts/setup-hyprlock.sh
+```
+
+---
+
+### `scripts/setup-wallpaper.sh`
+
+Interactive wallpaper picker. Lists images from `~/Pictures/Wallpapers/`, writes `~/.config/hypr/hyprpaper.conf`, and applies the change live if Hyprland is running.
+
+```bash
+bash scripts/setup-wallpaper.sh
+```
+
+---
+
+### `scripts/setup-updates.sh`
+
+System updater with Waybar integration.
+
+- **Interactive mode:** `apt update` → list pending → prompt upgrade → detect reboot-required
+- **`--check` mode:** emits Waybar JSON with APT + Flatpak update counts
+
+```bash
+bash scripts/setup-updates.sh           # Interactive
+bash scripts/setup-updates.sh --check   # Waybar JSON
+```
+
+---
+
+### `scripts/setup-auto-updates.sh`
+
+Creates a systemd user timer that runs `check-updates.sh` daily and 5 min after boot. Results appear as a Waybar badge (green = up to date, orange = updates available).
+
+```bash
+bash scripts/setup-auto-updates.sh
+```
+
+---
+
+### `scripts/setup-multimonitor.sh`
+
+Detects connected monitors (via `hyprctl` or `/sys/class/drm`) and assigns workspaces: 1–3 on primary, 4–10 on secondary. Writes `monitors.conf` and a `kanshi` profile.
+
+```bash
+bash scripts/setup-multimonitor.sh
+```
+
+---
+
+### `scripts/verify-install.sh`
+
+Read-only diagnostic. Checks binaries, systemd services, config files, APT sources, and Wayland purity. Exits 0 if all required checks pass.
+
+```bash
+bash scripts/verify-install.sh
+```
+
+---
+
+## Default Keybindings
+
+| Shortcut | Action |
+|---|---|
+| `SUPER + Return` | Terminal (alacritty) |
+| `SUPER + D` | App launcher (wofi) |
+| `SUPER + E` | File manager (nautilus) |
+| `SUPER + Q` | Close window |
+| `SUPER + F` | Fullscreen |
+| `SUPER + L` | Lock screen (hyprlock) |
+| `SUPER + W` | Cycle wallpaper |
+| `SUPER + B` | Bluetooth manager (blueman) |
+| `SUPER + C` | Clipboard history (cliphist + wofi) |
+| `SUPER + SHIFT + P` | Power menu (wlogout) |
+| `SUPER + SHIFT + T` | Theme picker (wofi) |
+| `SUPER + SHIFT + A` | Audio control (pavucontrol) |
+| `SUPER + SHIFT + C` | Color picker (hyprpicker) |
+| `SUPER + SHIFT + R` | Screen recording toggle (wf-recorder) |
+| `SUPER + 1–3` | Switch workspace (primary monitor) |
+| `SUPER + 4–0` | Switch workspace (secondary monitor) |
+| `Print` | Screenshot area → clipboard |
+| `SUPER + Print` | Screenshot → `~/Pictures/Screenshots/` |
 
 ---
 
 ## Documentation
 
-- **[HYPRLAND.md](HYPRLAND.md)** - Complete Hyprland installation and configuration guide
-- **[PACKAGE_STATUS.md](PACKAGE_STATUS.md)** - Detailed package availability status for Debian
+- **[HYPRLAND.md](HYPRLAND.md)** — Troubleshooting and post-install notes
+- **[PACKAGE_STATUS.md](PACKAGE_STATUS.md)** — Package availability matrix for Debian Forky/Sid
+- **[WAYLAND_PURE.md](WAYLAND_PURE.md)** — Wayland-only architecture decisions
+- **[TODO.md](TODO.md)** — Planned improvements and known issues
+
+---
 
 ## Notes
-- Ensure you have a reliable internet connection during script execution.
-- These scripts are intended for advanced users familiar with Linux system administration.
-- For Hyprland, Debian Testing (Forky) or Sid (Unstable) is required.
+
+- Requires Debian Testing (Forky) or Sid — not compatible with Debian Stable
+- All scripts must be run from the repository root directory
+- Intended for users familiar with Linux system administration
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
 
+MIT License. See the LICENSE file for details.

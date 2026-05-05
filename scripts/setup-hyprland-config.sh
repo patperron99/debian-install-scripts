@@ -1,18 +1,19 @@
 #!/bin/bash
 set -uo pipefail
 
-# Source common functions for colors
 source "$(dirname "$0")/common_functions.sh"
 
 echo -e "${GREEN}=== Hyprland Configuration Setup ===${NC}"
-echo "This script will create basic Hyprland configuration files"
+echo "This script will install Hyprland configuration files"
 echo "inspired by Omarchy's clean and modular structure"
 echo ""
 
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIGS_DIR="$(cd "$SCRIPTS_DIR/../configs" && pwd)"
 CONFIG_DIR="$HOME/.config/hypr"
 
 # Ask user for confirmation
-echo -e "${YELLOW}This will create configuration files in $CONFIG_DIR${NC}"
+echo -e "${YELLOW}This will install configuration files into $CONFIG_DIR${NC}"
 echo -e "${YELLOW}Existing files will be backed up with .backup extension${NC}"
 echo -e "${YELLOW}Do you want to continue? (y/n)${NC}"
 read -r confirm
@@ -27,464 +28,136 @@ if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-# Backup existing configs
+# Ensure XDG user dirs exist
+xdg-user-dirs-update 2>/dev/null || true
+mkdir -p "$HOME/Pictures/Wallpapers" "$HOME/Pictures/Screenshots"
+
+# Backup existing hypr configs
 echo ""
 echo "Backing up existing configuration files..."
-for file in hyprland.conf monitors.conf input.conf bindings.conf looknfeel.conf autostart.conf; do
+mkdir -p "$CONFIG_DIR"
+for file in hyprland.conf envs.conf monitors.conf input.conf bindings.conf looknfeel.conf \
+            autostart.conf windowrules.conf workspaces.conf xdph.conf hypridle.conf hyprlock.conf; do
     if [ -f "$CONFIG_DIR/$file" ]; then
         cp "$CONFIG_DIR/$file" "$CONFIG_DIR/$file.backup"
         echo -e "${GREEN}Backed up: $file${NC}"
     fi
 done
 
-# Create main hyprland.conf
+# Install hypr configs
 echo ""
-echo "Creating main configuration file..."
-cat > "$CONFIG_DIR/hyprland.conf" << 'EOF'
-# Hyprland Configuration
-# Based on Omarchy's modular structure
-# Learn more: https://wiki.hyprland.org/Configuring/
+echo "Installing Hyprland configuration files..."
+cp "$CONFIGS_DIR/hypr/"* "$CONFIG_DIR/"
+echo -e "${GREEN}Installed: ~/.config/hypr/${NC}"
 
-# Source modular configuration files
-source = ~/.config/hypr/envs.conf
-source = ~/.config/hypr/monitors.conf
-source = ~/.config/hypr/input.conf
-source = ~/.config/hypr/looknfeel.conf
-source = ~/.config/hypr/bindings.conf
-source = ~/.config/hypr/autostart.conf
-source = ~/.config/hypr/windowrules.conf
-
-# Add any additional personal configuration below
-EOF
-
-echo -e "${GREEN}Created: hyprland.conf${NC}"
-
-# Create envs.conf
-cat > "$CONFIG_DIR/envs.conf" << 'EOF'
-# Environment Variables
-env = XCURSOR_SIZE,24
-env = QT_QPA_PLATFORMTHEME,qt5ct
-env = QT_QPA_PLATFORM,wayland
-env = GDK_BACKEND,wayland
-env = SDL_VIDEODRIVER,wayland
-env = CLUTTER_BACKEND,wayland
-env = XDG_CURRENT_DESKTOP,Hyprland
-env = XDG_SESSION_TYPE,wayland
-env = XDG_SESSION_DESKTOP,Hyprland
-EOF
-
-echo -e "${GREEN}Created: envs.conf${NC}"
-
-# Create monitors.conf
-cat > "$CONFIG_DIR/monitors.conf" << 'EOF'
-# Monitor Configuration
-# https://wiki.hyprland.org/Configuring/Monitors/
-
-# Example configurations:
-# monitor = eDP-1, 1920x1080@60, 0x0, 1
-# monitor = HDMI-A-1, 2560x1440@144, 1920x0, 1
-
-# Auto-detect monitor (recommended to start)
-monitor = , preferred, auto, 1
-EOF
-
-echo -e "${GREEN}Created: monitors.conf${NC}"
-
-# Create input.conf
-cat > "$CONFIG_DIR/input.conf" << 'EOF'
-# Input Configuration
-# https://wiki.hyprland.org/Configuring/Variables/#input
-
-input {
-    kb_layout = us
-    # kb_variant =
-    # kb_model =
-    # kb_options =
-    # kb_rules =
-
-    follow_mouse = 1
-
-    touchpad {
-        natural_scroll = true
-        disable_while_typing = true
-        tap-to-click = true
-        middle_button_emulation = false
-    }
-
-    sensitivity = 0 # -1.0 - 1.0, 0 means no modification
-}
-
-gestures {
-    workspace_swipe = true
-    workspace_swipe_fingers = 3
-}
-EOF
-
-echo -e "${GREEN}Created: input.conf${NC}"
-
-# Create looknfeel.conf
-cat > "$CONFIG_DIR/looknfeel.conf" << 'EOF'
-# Look and Feel Configuration
-# https://wiki.hyprland.org/Configuring/Variables/
-
-general {
-    gaps_in = 5
-    gaps_out = 10
-    border_size = 2
-    col.active_border = rgba(33ccffee) rgba(00ff99ee) 45deg
-    col.inactive_border = rgba(595959aa)
-
-    layout = dwindle
-
-    allow_tearing = false
-}
-
-decoration {
-    rounding = 8
-
-    blur {
-        enabled = true
-        size = 3
-        passes = 1
-        vibrancy = 0.1696
-    }
-
-    drop_shadow = true
-    shadow_range = 4
-    shadow_render_power = 3
-    col.shadow = rgba(1a1a1aee)
-}
-
-animations {
-    enabled = true
-
-    bezier = myBezier, 0.05, 0.9, 0.1, 1.05
-
-    animation = windows, 1, 7, myBezier
-    animation = windowsOut, 1, 7, default, popin 80%
-    animation = border, 1, 10, default
-    animation = borderangle, 1, 8, default
-    animation = fade, 1, 7, default
-    animation = workspaces, 1, 6, default
-}
-
-dwindle {
-    pseudotile = true
-    preserve_split = true
-}
-
-master {
-    new_status = master
-}
-
-misc {
-    force_default_wallpaper = 0
-    disable_hyprland_logo = true
-}
-EOF
-
-echo -e "${GREEN}Created: looknfeel.conf${NC}"
-
-# Create bindings.conf
-cat > "$CONFIG_DIR/bindings.conf" << 'EOF'
-# Keybindings Configuration
-# https://wiki.hyprland.org/Configuring/Binds/
-
-$mainMod = SUPER
-
-# Application shortcuts
-bind = $mainMod, Return, exec, alacritty
-bind = $mainMod, Q, killactive,
-bind = $mainMod SHIFT, E, exit,
-bind = $mainMod, E, exec, nautilus
-bind = $mainMod, V, togglefloating,
-bind = $mainMod, D, exec, wofi --show drun
-bind = $mainMod, P, pseudo, # dwindle
-bind = $mainMod, J, togglesplit, # dwindle
-bind = $mainMod, F, fullscreen,
-
-# Move focus with mainMod + arrow keys
-bind = $mainMod, left, movefocus, l
-bind = $mainMod, right, movefocus, r
-bind = $mainMod, up, movefocus, u
-bind = $mainMod, down, movefocus, d
-
-# Move focus with mainMod + vim keys
-bind = $mainMod, h, movefocus, l
-bind = $mainMod, l, movefocus, r
-bind = $mainMod, k, movefocus, u
-bind = $mainMod, j, movefocus, d
-
-# Switch workspaces with mainMod + [0-9]
-bind = $mainMod, 1, workspace, 1
-bind = $mainMod, 2, workspace, 2
-bind = $mainMod, 3, workspace, 3
-bind = $mainMod, 4, workspace, 4
-bind = $mainMod, 5, workspace, 5
-bind = $mainMod, 6, workspace, 6
-bind = $mainMod, 7, workspace, 7
-bind = $mainMod, 8, workspace, 8
-bind = $mainMod, 9, workspace, 9
-bind = $mainMod, 0, workspace, 10
-
-# Move active window to a workspace with mainMod + SHIFT + [0-9]
-bind = $mainMod SHIFT, 1, movetoworkspace, 1
-bind = $mainMod SHIFT, 2, movetoworkspace, 2
-bind = $mainMod SHIFT, 3, movetoworkspace, 3
-bind = $mainMod SHIFT, 4, movetoworkspace, 4
-bind = $mainMod SHIFT, 5, movetoworkspace, 5
-bind = $mainMod SHIFT, 6, movetoworkspace, 6
-bind = $mainMod SHIFT, 7, movetoworkspace, 7
-bind = $mainMod SHIFT, 8, movetoworkspace, 8
-bind = $mainMod SHIFT, 9, movetoworkspace, 9
-bind = $mainMod SHIFT, 0, movetoworkspace, 10
-
-# Scroll through existing workspaces with mainMod + scroll
-bind = $mainMod, mouse_down, workspace, e+1
-bind = $mainMod, mouse_up, workspace, e-1
-
-# Move/resize windows with mainMod + LMB/RMB and dragging
-bindm = $mainMod, mouse:272, movewindow
-bindm = $mainMod, mouse:273, resizewindow
-
-# Media keys (using pamixer for Wayland-native control)
-binde = , XF86AudioRaiseVolume, exec, pamixer -i 5
-binde = , XF86AudioLowerVolume, exec, pamixer -d 5
-bind = , XF86AudioMute, exec, pamixer -t
-bind = , XF86AudioPlay, exec, playerctl play-pause
-bind = , XF86AudioNext, exec, playerctl next
-bind = , XF86AudioPrev, exec, playerctl previous
-
-# Brightness keys
-binde = , XF86MonBrightnessUp, exec, brightnessctl set 5%+
-binde = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
-
-# Screenshot (Wayland-native)
-bind = , Print, exec, grim -g "$(slurp)" - | wl-copy
-bind = SHIFT, Print, exec, grim - | wl-copy
-bind = $mainMod, Print, exec, grim ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png
-
-# Lock screen (hyprlock if available, otherwise swaylock)
-bind = $mainMod, L, exec, hyprlock || swaylock
-
-# Color picker (if hyprpicker is installed)
-bind = $mainMod SHIFT, C, exec, hyprpicker -a
-EOF
-
-echo -e "${GREEN}Created: bindings.conf${NC}"
-
-# Create autostart.conf
-cat > "$CONFIG_DIR/autostart.conf" << 'EOF'
-# Autostart Configuration
-# Applications to launch at startup
-
-# Wallpaper
-exec-once = swaybg -i ~/Pictures/wallpaper.png -m fill
-
-# Status bar
-exec-once = waybar
-
-# Notification daemon
-exec-once = mako
-
-# Polkit agent (Hyprland native)
-exec-once = hyprpolkitagent
-
-# SwayOSD (volume/brightness OSD) - if compiled
-exec-once = swayosd-server
-
-# Idle management (if hypridle is installed)
-# exec-once = hypridle
-
-# Night light (if hyprsunset is installed)
-# exec-once = hyprsunset
-
-# Clipboard manager
-exec-once = wl-paste --type text --watch wl-copy
-exec-once = wl-paste --type image --watch wl-copy
-EOF
-
-echo -e "${GREEN}Created: autostart.conf${NC}"
-
-# Create windowrules.conf
-cat > "$CONFIG_DIR/windowrules.conf" << 'EOF'
-# Window Rules
-# https://wiki.hyprland.org/Configuring/Window-Rules/
-
-# Example window rules
-# windowrule = float, ^(pavucontrol)$
-# windowrule = workspace 2, ^(firefox)$
-
-# Float certain windows by default
-windowrule = float, ^(org.gnome.Calculator)$
-windowrule = float, ^(gnome-disk-utility)$
-
-# Opacity rules
-windowrulev2 = opacity 0.90 0.90, class:^(Alacritty)$
-windowrulev2 = opacity 0.95 0.95, class:^(org.gnome.Nautilus)$
-EOF
-
-echo -e "${GREEN}Created: windowrules.conf${NC}"
-
-# Create basic waybar config
+# Install mako notification config
 echo ""
-echo "Creating Waybar configuration..."
-mkdir -p ~/.config/waybar
+echo "Installing Mako notification configuration..."
+mkdir -p "$HOME/.config/mako"
+cp "$CONFIGS_DIR/mako/config" "$HOME/.config/mako/config"
+echo -e "${GREEN}Installed: ~/.config/mako/config${NC}"
 
-cat > ~/.config/waybar/config << 'EOF'
-{
-    "layer": "top",
-    "position": "top",
-    "height": 30,
-    "spacing": 4,
+# Install kanshi multi-monitor config
+echo ""
+echo "Installing Kanshi multi-monitor configuration..."
+mkdir -p "$HOME/.config/kanshi"
+cp "$CONFIGS_DIR/kanshi/config" "$HOME/.config/kanshi/config"
+echo -e "${GREEN}Installed: ~/.config/kanshi/config${NC}"
 
-    "modules-left": ["hyprland/workspaces", "hyprland/window"],
-    "modules-center": ["clock"],
-    "modules-right": ["pulseaudio", "network", "battery", "tray"],
+# Install waybar config
+echo ""
+echo "Installing Waybar configuration..."
+mkdir -p "$HOME/.config/waybar/scripts"
+cp "$CONFIGS_DIR/waybar/config" "$HOME/.config/waybar/config"
+cp "$CONFIGS_DIR/waybar/style.css" "$HOME/.config/waybar/style.css"
+cp "$CONFIGS_DIR/waybar/colors.css" "$HOME/.config/waybar/colors.css"
+cp "$CONFIGS_DIR/waybar/scripts/"* "$HOME/.config/waybar/scripts/"
+chmod +x "$HOME/.config/waybar/scripts/"*
+echo -e "${GREEN}Installed: ~/.config/waybar/${NC}"
 
-    "hyprland/workspaces": {
-        "disable-scroll": false,
-        "all-outputs": true,
-        "format": "{icon}",
-        "format-icons": {
-            "1": "1",
-            "2": "2",
-            "3": "3",
-            "4": "4",
-            "5": "5",
-            "urgent": "",
-            "focused": "",
-            "default": ""
-        }
-    },
+# Install wofi launcher config
+echo ""
+echo "Installing Wofi launcher configuration..."
+mkdir -p "$HOME/.config/wofi"
+cp "$CONFIGS_DIR/wofi/config" "$HOME/.config/wofi/config"
+cp "$CONFIGS_DIR/wofi/style.css" "$HOME/.config/wofi/style.css"
+echo -e "${GREEN}Installed: ~/.config/wofi/${NC}"
 
-    "hyprland/window": {
-        "format": "{}",
-        "max-length": 50
-    },
+# Install wlogout power menu config
+echo ""
+echo "Installing Wlogout power menu configuration..."
+mkdir -p "$HOME/.config/wlogout"
+cp "$CONFIGS_DIR/wlogout/layout" "$HOME/.config/wlogout/layout"
+cp "$CONFIGS_DIR/wlogout/style.css" "$HOME/.config/wlogout/style.css"
+echo -e "${GREEN}Installed: ~/.config/wlogout/${NC}"
 
-    "clock": {
-        "format": "{:%H:%M | %a %d %b}",
-        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
-    },
+# Install Alacritty terminal config
+echo ""
+echo "Installing Alacritty configuration..."
+mkdir -p "$HOME/.config/alacritty/themes"
+cp "$CONFIGS_DIR/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
+cp "$CONFIGS_DIR/alacritty/themes/"* "$HOME/.config/alacritty/themes/"
+echo -e "${GREEN}Installed: ~/.config/alacritty/${NC}"
 
-    "battery": {
-        "states": {
-            "warning": 30,
-            "critical": 15
-        },
-        "format": "{capacity}% {icon}",
-        "format-charging": "{capacity}% ",
-        "format-plugged": "{capacity}% ",
-        "format-icons": ["", "", "", "", ""]
-    },
+# Install Kitty terminal config
+echo ""
+echo "Installing Kitty configuration..."
+mkdir -p "$HOME/.config/kitty"
+cp "$CONFIGS_DIR/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+cp "$CONFIGS_DIR/kitty/current-theme.conf" "$HOME/.config/kitty/current-theme.conf"
+echo -e "${GREEN}Installed: ~/.config/kitty/${NC}"
 
-    "network": {
-        "format-wifi": "{essid} ",
-        "format-ethernet": "{ipaddr} ",
-        "format-disconnected": "Disconnected ⚠",
-        "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
-    },
+# Install Tmux config
+echo ""
+echo "Installing Tmux configuration..."
+mkdir -p "$HOME/.config/tmux"
+cp "$CONFIGS_DIR/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
+echo -e "${GREEN}Installed: ~/.config/tmux/tmux.conf${NC}"
 
-    "pulseaudio": {
-        "format": "{volume}% {icon}",
-        "format-bluetooth": "{volume}% {icon}",
-        "format-muted": "",
-        "format-icons": {
-            "headphone": "",
-            "hands-free": "",
-            "headset": "",
-            "phone": "",
-            "portable": "",
-            "car": "",
-            "default": ["", "", ""]
-        },
-        "on-click": "pamixer -t",
-        "on-scroll-up": "pamixer -i 5",
-        "on-scroll-down": "pamixer -d 5"
-    },
+# Install .bashrc
+echo ""
+echo "Installing .bashrc..."
+[ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$HOME/.bashrc.backup"
+cp "$CONFIGS_DIR/bashrc/.bashrc" "$HOME/.bashrc"
+echo -e "${GREEN}Installed: ~/.bashrc${NC}"
 
-    "tray": {
-        "spacing": 10
-    }
-}
-EOF
-
-echo -e "${GREEN}Created: waybar/config${NC}"
-
-cat > ~/.config/waybar/style.css << 'EOF'
-* {
-    border: none;
-    border-radius: 0;
-    font-family: "JetBrainsMono Nerd Font", "Font Awesome 6 Free";
-    font-size: 13px;
-    min-height: 0;
-}
-
-window#waybar {
-    background-color: rgba(26, 27, 38, 0.9);
-    color: #ffffff;
-}
-
-#workspaces button {
-    padding: 0 5px;
-    background-color: transparent;
-    color: #ffffff;
-}
-
-#workspaces button.active {
-    background-color: rgba(100, 114, 125, 0.4);
-}
-
-#workspaces button.urgent {
-    background-color: #eb4d4b;
-}
-
-#clock,
-#battery,
-#network,
-#pulseaudio,
-#tray {
-    padding: 0 10px;
-    margin: 0 3px;
-}
-
-#battery.charging {
-    color: #26a65b;
-}
-
-#battery.warning:not(.charging) {
-    color: #f39c12;
-}
-
-#battery.critical:not(.charging) {
-    color: #eb4d4b;
-}
-EOF
-
-echo -e "${GREEN}Created: waybar/style.css${NC}"
+# Install helper scripts to ~/.local/bin/
+echo ""
+echo "Installing helper scripts to ~/.local/bin/..."
+mkdir -p "$HOME/.local/bin"
+for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh; do
+    if [ -f "$SCRIPTS_DIR/$helper" ]; then
+        cp "$SCRIPTS_DIR/$helper" "$HOME/.local/bin/$helper"
+        chmod +x "$HOME/.local/bin/$helper"
+        echo -e "${GREEN}Installed: ~/.local/bin/$helper${NC}"
+    else
+        echo -e "${YELLOW}Not found: $SCRIPTS_DIR/$helper (skipped)${NC}"
+    fi
+done
 
 echo ""
 echo -e "${GREEN}=== Configuration Setup Complete ===${NC}"
 echo ""
-echo -e "${YELLOW}Configuration files created:${NC}"
-echo "  - ~/.config/hypr/hyprland.conf (main config)"
-echo "  - ~/.config/hypr/envs.conf (environment variables)"
-echo "  - ~/.config/hypr/monitors.conf (display configuration)"
-echo "  - ~/.config/hypr/input.conf (keyboard/mouse settings)"
-echo "  - ~/.config/hypr/looknfeel.conf (appearance)"
-echo "  - ~/.config/hypr/bindings.conf (keybindings)"
-echo "  - ~/.config/hypr/autostart.conf (startup applications)"
-echo "  - ~/.config/hypr/windowrules.conf (window rules)"
-echo "  - ~/.config/waybar/config (waybar configuration)"
-echo "  - ~/.config/waybar/style.css (waybar styling)"
+echo -e "${YELLOW}Configuration files installed:${NC}"
+echo "  - ~/.config/hypr/              (Hyprland configs)"
+echo "  - ~/.config/mako/config        (notification daemon)"
+echo "  - ~/.config/kanshi/config      (multi-monitor profiles)"
+echo "  - ~/.config/waybar/            (status bar)"
+echo "  - ~/.config/wofi/              (app launcher)"
+echo "  - ~/.config/wlogout/           (power menu)"
+echo "  - ~/.config/alacritty/         (terminal)"
+echo "  - ~/.config/kitty/             (terminal)"
+echo "  - ~/.config/tmux/              (multiplexer)"
+echo "  - ~/.bashrc                    (shell config)"
+echo "  - ~/.local/bin/                (helper scripts)"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
-echo "1. Review and customize the configuration files to your liking"
-echo "2. Add a wallpaper image to ~/Pictures/wallpaper.png"
-echo "3. Logout and select 'Hyprland' from your display manager"
-echo "4. Press SUPER+D to launch applications"
-echo "5. Press SUPER+Q to close windows"
+echo "1. Set wallpaper:    bash scripts/setup-wallpaper.sh"
+echo "2. Configure theme:  bash scripts/setup-theme.sh"
+echo "3. Configure lock:   bash scripts/setup-hyprlock.sh"
+echo "4. Verify install:   bash scripts/verify-install.sh"
+echo "5. Add wallpaper images to ~/Pictures/Wallpapers/"
+echo "6. Logout and select 'Hyprland' from your display manager"
 echo ""
 echo -e "${GREEN}Key shortcuts:${NC}"
 echo "  SUPER + Return    : Open terminal"
@@ -493,6 +166,9 @@ echo "  SUPER + E         : File manager"
 echo "  SUPER + Q         : Close window"
 echo "  SUPER + F         : Fullscreen"
 echo "  SUPER + L         : Lock screen"
+echo "  SUPER + C         : Clipboard history"
+echo "  SUPER + SHIFT + R : Screen recording toggle"
 echo "  SUPER + 1-9       : Switch workspace"
-echo "  Print             : Screenshot (area)"
+echo "  Print             : Screenshot (area → clipboard)"
+echo "  SUPER + Print     : Screenshot (saved to ~/Pictures/Screenshots/)"
 echo ""

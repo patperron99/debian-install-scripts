@@ -1,7 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
-source scripts/common_functions.sh
+source "$(dirname "$0")/common_functions.sh"
+
+LOG_FILE="/var/log/install-extras-hyprland.log"
 
 declare -a EXTRA_PACKAGES=(
     # Python
@@ -13,43 +15,44 @@ declare -a EXTRA_PACKAGES=(
     "cmake"
     "meson"
     "ninja-build"
-    "stow"
     "fwupd"
     "shellcheck"
     "npm"
     "flatpak"
+    "neovim"
+    "fd-find"
+    "ripgrep"
+    "psmisc"
+    "jq"
+    "fastfetch"
 
     # File manager + disk tools
     "thunar"
     "gnome-disk-utility"
     "gnome-calculator"
 
-    # Image viewer (Wayland-native)
+    # Media
     "imv"
-
-    # Document viewer
     "evince"
-
-    # Video player (Wayland-native)
     "mpv"
+    "imagemagick"
 
     # Avahi / GVFS
     "avahi-daemon"
     "gvfs-backends"
     "gnome-keyring"
 
-    # Misc
-    "imagemagick"
-    "ripgrep"
-    "psmisc"
+    # Power menu (Wayland-native)
+    "wlogout"
 )
 
-LOG_FILE="/var/log/install-extras-hyprland.log"
+echo -e "${GREEN}=== Extras Installation ===${NC}"
+echo "Installs dev tools, fonts, Neovim, Tmux, Flatpak, and Zen browser."
+echo ""
 
-echo "Updating system..."
 sudo apt update
 
-echo "Installing extras packages..."
+echo "Installing extra packages..."
 for pkg in "${EXTRA_PACKAGES[@]}"; do
     if check_package "$pkg"; then
         if install_package "$pkg"; then
@@ -59,57 +62,61 @@ for pkg in "${EXTRA_PACKAGES[@]}"; do
             echo "Failed to install: $pkg" | sudo tee -a "$LOG_FILE"
         fi
     else
-        echo -e "${YELLOW}Package not found in repository: $pkg${NC}"
+        echo -e "${YELLOW}Package not found in repository: $pkg (skipping)${NC}"
         FAILED_PACKAGES+=("$pkg")
-        echo "Package not found: $pkg" | sudo tee -a "$LOG_FILE"
     fi
 done
 
-# Flatpak: add Flathub and install Zen browser
-echo "Setting up Flatpak..."
+# ─── FLATPAK: Flathub + Zen browser ───────────────────────────────────────────
+echo ""
+echo "Setting up Flatpak (Flathub + Zen browser)..."
 sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-if ! sudo flatpak install -y flathub app.zen_browser.zen; then
-    echo -e "${RED}Failed to install Zen browser${NC}"
+if ! sudo flatpak install -y flathub app.zen_browser.zen 2>/dev/null; then
+    echo -e "${YELLOW}Failed to install Zen browser (skipping)${NC}"
     FAILED_PACKAGES+=("zen-browser-flatpak")
-    echo "Failed to install Zen browser" | sudo tee -a "$LOG_FILE"
 fi
 
-# Neovim from source (stable branch)
-echo "Installing Neovim from source..."
-cd /tmp || exit 1
-if git clone https://github.com/neovim/neovim.git; then
-    cd neovim || exit 1
-    git checkout stable
-    sudo make CMAKE_BUILD_TYPE=Release
-    sudo make install
-    cd /tmp || exit 1
-else
-    echo -e "${RED}Failed to clone Neovim repository${NC}"
-    FAILED_PACKAGES+=("neovim")
-    echo "Failed to clone Neovim" | sudo tee -a "$LOG_FILE"
-fi
+# ─── NERD FONTS ───────────────────────────────────────────────────────────────
+echo ""
+echo "Installing Nerd Fonts (JetBrainsMono, FiraCode, Hack)..."
+NERD_FONTS_VERSION="v3.2.1"
+NERD_FONTS_BASE="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}"
+FONTS_DIR="$HOME/.local/share/fonts/NerdFonts"
+mkdir -p "$FONTS_DIR"
 
-# Nerd Fonts
-echo "Installing Nerd Fonts..."
-NERD_FONTS_DIR="/tmp/nerd-fonts"
-git clone --depth 1 https://github.com/ryanoasis/nerd-fonts "$NERD_FONTS_DIR"
-cd "$NERD_FONTS_DIR" || exit 1
-bash install.sh
-cd /tmp || exit 1
-rm -rf "$NERD_FONTS_DIR"
-
-# Dotconfigs via stow
-echo "Installing Dotconfigs..."
-cd ~ || exit 1
-git clone --depth=1 https://github.com/patperron99/dotconfigs
-rm -f .bashrc
-cd dotconfigs || exit 1
-for dir in */; do
-    stow "$dir"
+for font in JetBrainsMono FiraCode Hack; do
+    archive="/tmp/${font}.tar.xz"
+    echo "  Downloading $font..."
+    if curl -fsSL --connect-timeout 15 --max-time 120 \
+            -o "$archive" "${NERD_FONTS_BASE}/${font}.tar.xz"; then
+        tar -xf "$archive" -C "$FONTS_DIR" --wildcards '*.ttf' 2>/dev/null || \
+        tar -xf "$archive" -C "$FONTS_DIR" 2>/dev/null || true
+        rm -f "$archive"
+        echo -e "${GREEN}  $font installed${NC}"
+    else
+        echo -e "${YELLOW}  Failed to download $font (skipping)${NC}"
+    fi
 done
+fc-cache -fv "$FONTS_DIR" >/dev/null 2>&1
+echo -e "${GREEN}Nerd Fonts installed to $FONTS_DIR${NC}"
 
-# Enable avahi
-sudo systemctl enable avahi-daemon
+# ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────
+echo ""
+echo "Installing Tmux Plugin Manager (TPM)..."
+TPM_DIR="$HOME/.config/tmux/plugins/tpm"
+if [ ! -d "$TPM_DIR" ]; then
+    if git clone --depth=1 https://github.com/tmux-plugins/tpm "$TPM_DIR" 2>/dev/null; then
+        echo -e "${GREEN}TPM installed at $TPM_DIR${NC}"
+        echo "Run 'tmux' then press Prefix+I to install plugins."
+    else
+        echo -e "${YELLOW}Failed to clone TPM (skipping)${NC}"
+    fi
+else
+    echo -e "${GREEN}TPM already installed${NC}"
+fi
+
+# ─── ENABLE AVAHI ─────────────────────────────────────────────────────────────
+sudo systemctl enable avahi-daemon 2>/dev/null || true
 
 print_summary
 

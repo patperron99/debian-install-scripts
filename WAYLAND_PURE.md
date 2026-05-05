@@ -43,7 +43,6 @@ Cette version des scripts est basée sur les packages utilisés par **Omarchy** 
 |---------|----------|---------|
 | `hypridle` | Gestion veille | Éteindre écran, lock auto |
 | `hyprlock` | Écran verrouillage | Lock screen Hyprland |
-| `hyprsunset` | Filtre lumière bleue | Night light mode |
 | `hyprpicker` | Color picker | Pipette couleur Wayland |
 | `swayosd` | OSD volume/brightness | Affichage visuel ajustements |
 

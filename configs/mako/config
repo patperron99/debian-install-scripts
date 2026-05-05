@@ -1,0 +1,36 @@
+# Mako notification daemon configuration
+# https://github.com/emersion/mako
+
+default-timeout=5000
+ignore-timeout=0
+
+max-visible=5
+sort=-time
+
+layer=overlay
+anchor=top-right
+margin=10
+padding=10
+border-size=2
+border-radius=8
+font=monospace 11
+width=300
+height=100
+
+background-color=#1e1e2e
+text-color=#cdd6f4
+border-color=#89b4fa
+progress-color=over #313244
+
+[urgency=low]
+default-timeout=3000
+border-color=#a6e3a1
+
+[urgency=normal]
+default-timeout=5000
+border-color=#89b4fa
+
+[urgency=high]
+default-timeout=0
+border-color=#f38ba8
+background-color=#45085a

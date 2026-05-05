@@ -1,0 +1,173 @@
+{
+  "output": "eDP-1",
+  "layer": "top",
+  "position": "top",
+  "modules-left": ["clock", "sway/window"],
+  "modules-center": ["sway/workspaces"],
+  "modules-right": [
+    "idle_inhibitor",
+    "pulseaudio",
+    "cpu",
+    "memory",
+    "network",
+    "custom/vpn",
+    "bluetooth",
+    "backlight",
+    "battery",
+    "tray"
+    ],
+  "margin-top": 4,
+  "margin-left": 4,
+  "margin-right": 4,
+
+  "custom/separator": {
+      "format": "/",
+      "interval": "once",
+      "tooltip": false
+  },
+
+  "sway/workspaces": {
+    "all-outputs": true,
+    "format": "{name}",
+    "format-focused": "<span style='color:#cba6f7'> {name}</span>",
+    "format-visible": " {name}",
+    "format-invisible": " {name}",
+    "format-urgent": "<span style='color:#f38ba8'> {name}</span>"
+  },
+
+  "sway/window": {
+    "format": "{title}",
+    "max-length": 50,
+    "all-outputs" : true,
+    "offscreen-css-text": "(Remote)",
+    "offscreen-css": true
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-bluetooth": "{icon} {volume}%",
+    "format-muted": " ",
+    "format-icons": {
+        "headphone": " ",
+        "hands-free": "",
+        "headset": "",
+        "phone": " ",
+        "phone-muted": " ",
+        "portable": " ",
+        "car": " ",
+        "default": [" ", " "]
+    },
+    "scroll-step": 1,
+    "on-click": "pavucontrol",
+    "ignored-sinks": ["Easy Effects Sink"]
+  },
+
+  "custom/vpn": {
+    "format": "{}",
+    "interval": 5,
+    "exec": "~/.config/waybar/scripts/vpn_status.sh",
+    "on-click": "~/.config/waybar/scripts/vpn_menu.sh",
+    "tooltip": "vpn"
+  },
+
+  "cpu": {
+    "format": "{icon} {usage}%",
+    "format-icons": "",
+    "interval": 2
+  },
+
+  "memory": {
+    "format": "󰍛 {used}%",
+    "interval": 2
+  },
+
+  "backlight": {
+      "format": "{icon} {percent}%",
+      "format-icons": ["󰃚", "󰃛", "󰃜", "󰃝", "󰃞", "󰃟", "󰃠"], // Brightness icons from low to high
+      "tooltip": true,
+      "tooltip-format": "Brightness: {percent}%",
+      "on-scroll-up": "brightnessctl set 5%+",
+      "on-scroll-down": "brightnessctl set 5%-",
+  },
+
+  "battery": {
+      "interval": 2,
+      "format": "{icon} {capacity}%",
+      "format-charging": "{icon} {capacity}% <span color='#89b4fa'>Charging</span>", // Blueish color for charging text
+      "format-plugged": "{icon} {capacity}% <span color='#a6e3a1'>Plugged</span>", // Greenish color for plugged text
+      "format-alt": "{timeTo} {icon}",
+      "states": {
+          "warning": 30,
+          "critical": 15
+      },
+      "format-icons": {
+          "charging": ["󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"], // Charging animation/steps
+          "default": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]  // Discharging steps
+      },
+      "tooltip": true,
+      "tooltip-format": "{timeTo} - {power} W"
+  },
+
+  "clock": {
+    "format-alt": "{:%H:%M}",
+    "format": "{:%A, %B %d | %R}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months":   "<span color='#8FBCBB'><b>{}</b></span>",   // Frost (cyan)
+        "days":     "<span color='#D8DEE9'><b>{}</b></span>",   // Snow Storm (white)
+        "weeks":    "<span color='#A3BE8C'><b>W{}</b></span>",  // Aurora (green)
+        "weekdays": "<span color='#88C0D0'><b>{}</b></span>",   // Frost (blue)
+        "today":    "<span color='#BF616A'><b><u>{}</u></b></span>" // Aurora (red)
+      }
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
+  },
+
+  "tray": {
+    "spacing": 10
+  },
+
+  "network": {
+    "interface": "wlp59s0",
+    "format": "{ifname}",
+    "format-wifi": " ",
+    "format-ethernet": "{ipaddr}/{cidr} 󰊗",
+    "format-disconnected": "", //An empty format will hide the module.
+    "tooltip-format": "{ifname} via {gwaddr} 󰊗",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)",
+    "tooltip-format-ethernet": "{ifname} ",
+    "tooltip-format-disconnected": "Disconnected",
+    "max-length": 50,
+    "on-click": "nm-connection-editor"
+  },
+
+  "bluetooth": {
+  	"format": "{icon} {status}",
+    "format-icons": "",
+	  "format-connected": "{icon} {device_alias}",
+	  "format-connected-battery": "{icon} {device_alias} {device_battery_percentage}%",
+	  // "format-device-preference": [ "device1", "device2" ], // preference list deciding the displayed device
+	  "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
+	  "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
+	  "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+	  "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%"
+  },
+
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+        "activated": " ",
+        "deactivated": " "
+    }
+  }
+}
+

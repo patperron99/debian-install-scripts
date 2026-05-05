@@ -46,18 +46,38 @@ Dernière vérification : Avril 2026
 |---------|---------|-----|-------|
 | hyprland | ❌ (retiré) | ✅ v0.54+ | Nécessite sources Sid |
 | xdg-desktop-portal-hyprland | ❌ | ✅ | Nécessite sources Sid |
+| hyprlock | ❌ | ✅ | Verrouillage écran Hyprland-natif |
+| hypridle | ❌ | ✅ | Daemon de veille |
+| hyprpicker | ❌ | ✅ | Pipette couleur |
+| swayosd | ❌/✅ | ✅ | OSD volume/luminosité |
+| swaybg | ❌ | ✅ | Gestionnaire de fond d'écran |
+| cliphist | ❌ | ✅ | Historique presse-papiers |
 
-**Note importante** : Hyprland a été temporairement retiré de Trixie mais est disponible dans Forky (nouvelle branche testing) et Sid.
+**Note importante** : Hyprland a été temporairement retiré de Trixie mais est disponible dans Forky (nouvelle branche testing) et Sid. Le script `install-hyprland.sh` ajoute les sources Sid automatiquement si nécessaire, avec pinning APT configuré.
 
-### 🔨 Compilation obligatoire (pas dans les dépôts)
+### ✅ Disponibles dans Forky (ajouts récents)
 
-| Package | Raison | Difficulté | Temps |
-|---------|--------|------------|-------|
-| hyprpaper | Pas empaqueté | Facile | ~2 min |
-| hypridle | Pas empaqueté | Facile | ~2 min |
-| hyprlock | Pas empaqueté | Facile | ~2 min |
-| swww | Pas empaqueté (Rust) | Moyenne | ~10 min |
-| cliphist | Pas empaqueté (Go) | Facile | ~1 min |
+| Package | Notes |
+|---------|-------|
+| kanshi | Multi-monitor automatique (profiles) |
+| wf-recorder | Enregistrement écran Wayland |
+| swayimg | Visionneuse d'images légère |
+| nwg-look | Configurateur GTK pour Wayland |
+| arc-theme | Thème GTK flat/dark |
+| papirus-icon-theme | Thème d'icônes |
+| bibata-cursor-theme | Thème de curseur (si disponible) |
+| breeze-cursor-theme | Thème de curseur KDE |
+| qt5ct | Configurateur Qt5 |
+| adwaita-qt | Style Qt compatible GTK |
+| xsettingsd | Daemon de paramètres GTK pour Wayland |
+
+### 🚫 Non disponibles dans APT Debian
+
+| Package | Alternative | Raison |
+|---------|-------------|--------|
+| swww | swaybg | Nécessite Rust/cargo |
+| walker | wofi | Nécessite compilation Go |
+| bluetui | blueman | Nécessite Rust/cargo |
 
 ### ❌ Packages inexistants ou mal nommés
 
@@ -123,21 +143,13 @@ Option 1 : Dépôts Sid
 - Stable pour une daily driver
 ```
 
-### Pour utilisateurs avancés
+### Pour tous les utilisateurs
 ```bash
-Option 2 : Compilation
-- Versions les plus récentes
-- Contrôle total
-- Plus long (1-2 heures)
-- Mises à jour manuelles
-```
-
-### Pour testing/développement
-```bash
-Hybride :
-- Hyprland compilé depuis Git
-- Reste depuis dépôts
-- Meilleur des deux mondes
+Option unique : Dépôts APT (Forky + Sid)
+- Rapide (15-30 min)
+- Mises à jour via apt upgrade
+- Stable pour daily driver
+- Sid isolé par pinning APT (priorité 100)
 ```
 
 ## Sources vérifiées
@@ -168,4 +180,4 @@ apt-cache search hypr
 https://packages.debian.org/search?keywords=hyprland
 ```
 
-Dernière mise à jour : 2026-04-07
+Dernière mise à jour : 2026-04-28

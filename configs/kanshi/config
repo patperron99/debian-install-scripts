@@ -1,0 +1,21 @@
+# kanshi multi-monitor profiles
+# https://wayland.emersion.fr/kanshi/
+#
+# Run `hyprctl monitors` to get your monitor names
+# then add profiles below.
+#
+# Example — laptop standalone:
+# profile laptop {
+#     output eDP-1 enable resolution 1920x1080 position 0,0
+# }
+#
+# Example — laptop + external monitor:
+# profile docked {
+#     output eDP-1 enable resolution 1920x1080 position 0,1440
+#     output HDMI-A-1 enable resolution 2560x1440 position 0,0
+# }
+
+# Default: enable all connected outputs
+profile {
+    output * enable
+}

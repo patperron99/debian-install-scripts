@@ -3,155 +3,142 @@ set -uo pipefail
 
 source scripts/common_functions.sh
 
-declare -a BASE_PACKAGES=(
-    # Wayland core
-    "hyprland"
-    "xdg-desktop-portal-hyprland"
-    "xdg-desktop-portal-gtk"
-    "waybar"
-    "swaybg"
-    "swayidle"
+# ─── HELPERS ──────────────────────────────────────────────────────────────────
+section() {
+    echo ""
+    echo -e "${GREEN}══════════════════════════════════════════${NC}"
+    echo -e "${GREEN}  $1${NC}"
+    echo -e "${GREEN}══════════════════════════════════════════${NC}"
+    echo ""
+}
 
-    # Notifications
-    "mako-notifier"
+confirm_step() {
+    local msg="$1"
+    echo -e "${YELLOW}$msg (y/n)${NC}"
+    local ans
+    read -r ans
+    while [[ ! "$ans" =~ ^[YyNn]$ ]]; do
+        echo -e "${YELLOW}Please enter y or n:${NC}"
+        read -r ans
+    done
+    [[ "$ans" =~ ^[Yy]$ ]]
+}
 
-    # App launcher
-    "wofi"
+# ─── STEPS ────────────────────────────────────────────────────────────────────
+step_packages() {
+    section "1/8 — Core + Hyprland packages"
+    bash scripts/install-hyprland.sh
+}
 
-    # Screenshot (Wayland-native)
-    "grim"
-    "slurp"
+step_configs() {
+    section "2/8 — Deploy configuration files"
+    bash scripts/setup-hyprland-config.sh
+}
 
-    # Clipboard
-    "wl-clipboard"
-
-    # Terminal emulators
-    "alacritty"
-    "kitty"
-
-    # Audio (PipeWire stack, no PulseAudio)
-    "pipewire"
-    "pipewire-pulse"
-    "pipewire-alsa"
-    "wireplumber"
-    "pamixer"
-    "pavucontrol"
-
-    # Network
-    "network-manager"
-    "network-manager-gnome"
-
-    # Bluetooth
-    "blueman"
-
-    # Display manager
-    "sddm"
-
-    # Power / backlight
-    "acpid"
-    "brightnessctl"
-
-    # Media control
-    "playerctl"
-
-    # Polkit agent (Wayland-native)
-    "hyprpolkitagent"
-
-    # Qt Wayland support
-    "qtwayland5"
-    "qt6-wayland"
-
-    # Build tools
-    "git"
-    "curl"
-    "wget"
-    "build-essential"
-    "gettext"
-    "pkg-config"
-    "unzip"
-
-    # Utilities
-    "ripgrep"
-    "psmisc"
-
-    # Fonts
-    "fonts-noto"
-    "fonts-noto-color-emoji"
-    "fonts-font-awesome"
-    "fonts-jetbrains-mono"
-)
-
-LOG_FILE="/var/log/postinstall-hyprland.log"
-
-echo -e "${YELLOW}Do you want to install extras packages? (y/n)${NC}"
-read -r install_extras
-while [[ ! "$install_extras" =~ ^[YyNn]$ ]]; do
-    echo -e "${YELLOW}Please enter y or n:${NC}"
-    read -r install_extras
-done
-
-echo "Updating system..."
-sudo apt update
-
-# Add Sid sources if hyprland is not yet available in current repos
-if ! apt-cache show hyprland &>/dev/null; then
-    echo -e "${YELLOW}Hyprland not found in current repos. Adding Debian Sid sources...${NC}"
-    echo "deb http://deb.debian.org/debian/ sid main contrib non-free non-free-firmware" \
-        | sudo tee /etc/apt/sources.list.d/sid.list > /dev/null
-    sudo apt update -o Dir::Etc::sourcelist="sources.list.d/sid.list" \
-                    -o Dir::Etc::sourceparts="-" \
-                    -o APT::Get::List-Cleanup="0"
-fi
-
-echo "Installing base packages..."
-for pkg in "${BASE_PACKAGES[@]}"; do
-    if check_package "$pkg"; then
-        if install_package "$pkg"; then
-            SUCCESSFUL_PACKAGES+=("$pkg")
-        else
-            FAILED_PACKAGES+=("$pkg")
-            echo "Failed to install: $pkg" | sudo tee -a "$LOG_FILE"
-        fi
-    else
-        echo -e "${YELLOW}Package not found in repository: $pkg${NC}"
-        FAILED_PACKAGES+=("$pkg")
-        echo "Package not found: $pkg" | sudo tee -a "$LOG_FILE"
-    fi
-done
-
-# Enable services
-sudo systemctl enable sddm
-sudo systemctl enable NetworkManager
-sudo systemctl enable bluetooth
-sudo systemctl enable acpid
-
-# Configure SDDM for Wayland/Hyprland
-sudo mkdir -p /etc/sddm.conf.d
-cat << 'EOF' | sudo tee /etc/sddm.conf.d/hyprland.conf > /dev/null
-[General]
-DisplayServer=wayland
-GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
-EOF
-
-# Create Hyprland wayland-session entry if missing
-if [ ! -f /usr/share/wayland-sessions/hyprland.desktop ]; then
-    sudo mkdir -p /usr/share/wayland-sessions
-    cat << 'EOF' | sudo tee /usr/share/wayland-sessions/hyprland.desktop > /dev/null
-[Desktop Entry]
-Name=Hyprland
-Comment=An intelligent dynamic tiling Wayland compositor
-Exec=Hyprland
-Type=Application
-EOF
-fi
-
-if [[ "$install_extras" =~ ^[Yy]$ ]]; then
-    echo "Installing extras packages..."
+step_extras() {
+    section "3/8 — Extras (neovim, tmux, fonts, wlogout)"
     bash scripts/install-extras-hyprland.sh
-fi
+}
 
-print_summary
+step_theme() {
+    section "4/8 — Theme (GTK, cursor, Neovim)"
+    bash scripts/setup-theme.sh
+}
 
-if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
-    echo "Failed packages logged to $LOG_FILE"
-fi
+step_lockscreen() {
+    section "5/8 — Lock screen (hyprlock + hypridle)"
+    bash scripts/setup-hyprlock.sh
+}
+
+step_wallpaper() {
+    section "6/8 — Wallpapers"
+    bash scripts/fetch-wallpapers.sh
+    bash scripts/setup-wallpaper.sh
+}
+
+step_updates() {
+    section "7/8 — Auto-update timer"
+    bash scripts/setup-auto-updates.sh
+}
+
+step_multimonitor() {
+    section "8/8 — Multi-monitor layout"
+    bash scripts/setup-multimonitor.sh
+}
+
+step_verify() {
+    section "Verify installation"
+    bash scripts/verify-install.sh
+}
+
+# ─── MENU ─────────────────────────────────────────────────────────────────────
+show_menu() {
+    echo ""
+    echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║       Hyprland Post-Install Setup        ║${NC}"
+    echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
+    echo ""
+    echo "  a) Install everything (recommended)"
+    echo "  ────────────────────────────────────"
+    echo "  1) Core + Hyprland packages"
+    echo "  2) Deploy configuration files"
+    echo "  3) Extras  (neovim, tmux, fonts, wlogout)"
+    echo "  4) Theme   (GTK, cursor, Neovim/LazyVim)"
+    echo "  5) Lock screen  (hyprlock + hypridle)"
+    echo "  6) Wallpapers"
+    echo "  7) Auto-update timer"
+    echo "  8) Multi-monitor layout"
+    echo "  ────────────────────────────────────"
+    echo "  9) Verify installation"
+    echo "  q) Quit"
+    echo ""
+}
+
+# ─── MAIN ─────────────────────────────────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Run from the repository root directory.${NC}"
+echo -e "${YELLOW}Requires Debian Testing (Forky) or Sid.${NC}"
+
+while true; do
+    show_menu
+    read -rp "Choice: " choice
+
+    case "$choice" in
+        a|A)
+            step_packages
+            step_configs
+            step_extras
+            step_theme
+            step_lockscreen
+            step_wallpaper
+            step_updates
+            if confirm_step "Configure multi-monitor layout?"; then
+                step_multimonitor
+            fi
+            step_verify
+            echo ""
+            echo -e "${GREEN}═══════════════════════════════════════════${NC}"
+            echo -e "${GREEN}  Setup complete. Reboot to start Hyprland.${NC}"
+            echo -e "${GREEN}  At SDDM, select 'Hyprland'.              ${NC}"
+            echo -e "${GREEN}═══════════════════════════════════════════${NC}"
+            echo ""
+            break
+            ;;
+        1) step_packages ;;
+        2) step_configs ;;
+        3) step_extras ;;
+        4) step_theme ;;
+        5) step_lockscreen ;;
+        6) step_wallpaper ;;
+        7) step_updates ;;
+        8) step_multimonitor ;;
+        9) step_verify ;;
+        q|Q)
+            echo "Exiting."
+            break
+            ;;
+        *)
+            echo -e "${YELLOW}Invalid choice. Enter a, 1-9, or q.${NC}"
+            ;;
+    esac
+done
