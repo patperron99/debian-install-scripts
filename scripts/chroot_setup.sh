@@ -21,9 +21,9 @@ echo "Configuring locales..."
 dpkg-reconfigure locales
 
 # Set default locale
-echo "Generating /etc/locale.conf..."
-echo "LANG=en_US.UTF-8" > /etc/locale.conf
-echo "LANGUAGE=en_US:en" >> /etc/locale.conf
+echo "Generating /etc/default/locale..."
+echo "LANG=en_US.UTF-8" > /etc/default/locale
+echo "LANGUAGE=en_US:en" >> /etc/default/locale
 
 # Configure timezone
 dpkg-reconfigure tzdata
@@ -52,12 +52,14 @@ apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-lin
     wpasupplicant iw rfkill pciutils usbutils build-essential dkms
 
 # Check if encryption was used
-if [ -e /dev/mapper/cryptroot ]; then
+# In chroot /dev/mapper/cryptroot doesn't exist; detect via /etc/crypttab populated
+# from the host, or detect via the LUKS label on the underlying partition
+if findfs LABEL=Debian 2>/dev/null | xargs -I{} cryptsetup isLuks {} 2>/dev/null; then
     echo "Configuring encrypted system..."
-    echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
-    CRYPT_UUID=$(blkid -s UUID -o value $(findfs LABEL=Debian))
-    echo "cryptroot UUID=$CRYPT_UUID none luks,discard" >> /etc/crypttab
     apt install -y cryptsetup-initramfs
+    CRYPT_UUID=$(blkid -s UUID -o value "$(findfs LABEL=Debian)")
+    echo "cryptroot UUID=$CRYPT_UUID none luks,discard" >> /etc/crypttab
+    echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
 fi
 
 # Configure GRUB
