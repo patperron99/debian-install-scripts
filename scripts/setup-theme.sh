@@ -37,7 +37,7 @@ while [[ ! "$install_theme_pkgs" =~ ^[YyNn]$ ]]; do
 done
 
 if [[ "$install_theme_pkgs" =~ ^[Yy]$ ]]; then
-    sudo apt update
+    _APT_CMD apt update
     for pkg in "${THEME_PACKAGES[@]}"; do
         if check_package "$pkg"; then
             if install_package "$pkg"; then

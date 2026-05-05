@@ -10,16 +10,31 @@ NC='\033[0m' # No Color
 declare -a FAILED_PACKAGES=()
 declare -a SUCCESSFUL_PACKAGES=()
 
+# Use sudo only when not already root (allows chroot use and normal post-boot use)
+_APT_CMD() { [ "$EUID" -eq 0 ] && "$@" || sudo "$@"; }
+
 # Function to check if a package exists in apt repository
 check_package() {
-    sudo apt-cache show "$1" &> /dev/null
+    _APT_CMD apt-cache show "$1" &> /dev/null
     return $?
 }
 
 # Function to install a package with error handling
 install_package() {
     local pkg=$1
-    if sudo apt-get install -y "$pkg" &> /dev/null; then
+    if _APT_CMD apt-get install -y "$pkg" &> /dev/null; then
+        echo -e "${GREEN}Successfully installed: $pkg${NC}"
+        return 0
+    else
+        echo -e "${RED}Failed to install: $pkg${NC}"
+        return 1
+    fi
+}
+
+# Install without Recommends to avoid pulling in desktop environment meta-packages
+install_package_no_recommends() {
+    local pkg=$1
+    if _APT_CMD apt-get install -y --no-install-recommends "$pkg" &> /dev/null; then
         echo -e "${GREEN}Successfully installed: $pkg${NC}"
         return 0
     else

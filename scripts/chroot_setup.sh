@@ -88,6 +88,15 @@ echo "Set $USERNAME password:"
 passwd $USERNAME
 usermod -aG sudo,adm,dialout,cdrom,floppy,audio,dip,video,plugdev,users,netdev $USERNAME
 
+# Run Hyprland postinstall inside the chroot (packages + configs + theme)
+REPO_DIR="/opt/debian-install-scripts"
+if [ -d "$REPO_DIR" ]; then
+    bash "$REPO_DIR/scripts/chroot-postinstall.sh" "$USERNAME"
+else
+    echo "[WARN] $REPO_DIR not found — skipping Hyprland postinstall."
+    echo "       Run postinstall-hyprland.sh manually after reboot."
+fi
+
 # Update initramfs to include all configurations
 echo "Updating initramfs..."
 update-initramfs -u -k all

@@ -4,6 +4,16 @@ set -uo pipefail
 # Source common functions
 source "$(dirname "$0")/common_functions.sh"
 
+# When called from chroot-postinstall.sh, USERNAME is passed as $1
+# When run standalone post-boot, defaults to the invoking user
+if [ -n "${1:-}" ]; then
+    INSTALL_USER="$1"
+    INSTALL_HOME="/home/$1"
+else
+    INSTALL_USER="${SUDO_USER:-$USER}"
+    INSTALL_HOME="$HOME"
+fi
+
 # Log file for errors
 LOG_FILE="/var/log/hyprland-install.log"
 
@@ -44,10 +54,12 @@ declare -a AVAILABLE_PACKAGES=(
     # Network (iwd — no GNOME deps)
     "iwd"
 
-    # File manager (Wayland-native)
-    "nautilus"
-    "nautilus-extension-gnome-terminal"
-    "gnome-disk-utility"
+    # File manager (Wayland-native) — installed without Recommends below
+    # "nautilus" handled in no-recommends block
+
+    # Disk management (lightweight, no GNOME session deps)
+    "udiskie"
+    "udisks2"
 
     # Document viewers
     "evince"
@@ -80,8 +92,10 @@ declare -a AVAILABLE_PACKAGES=(
 
     # System tools
     "avahi-daemon"
-    "gvfs-backends"
-    "gnome-keyring"
+    # gvfs-backends and gnome-keyring handled in no-recommends block below
+
+    # Bluetooth support (required for systemctl enable bluetooth)
+    "bluez"
 
     # Base build tools (needed by some Hyprland tools at runtime)
     "git"
@@ -111,7 +125,7 @@ declare -a SID_PACKAGES=(
 )
 
 echo "Updating package lists..."
-sudo apt update
+_APT_CMD apt update
 
 echo ""
 echo "Installing available packages from repositories..."
@@ -124,12 +138,30 @@ for pkg in "${AVAILABLE_PACKAGES[@]}"; do
             SUCCESSFUL_PACKAGES+=("$pkg")
         else
             FAILED_PACKAGES+=("$pkg")
-            echo "Failed to install: $pkg" | sudo tee -a "$LOG_FILE"
+            echo "Failed to install: $pkg" | tee -a "$LOG_FILE"
         fi
     else
         echo -e "${YELLOW}Package not found in repository: $pkg${NC}"
         FAILED_PACKAGES+=("$pkg")
-        echo "Package not found: $pkg" | sudo tee -a "$LOG_FILE"
+        echo "Package not found: $pkg" | tee -a "$LOG_FILE"
+    fi
+done
+
+# Install GNOME-originated packages without Recommends to prevent DE pollution
+echo ""
+echo "Installing GNOME utilities (no recommends — prevents Cinnamon/GNOME session pull)..."
+for pkg in nautilus gnome-keyring gvfs-backends; do
+    if check_package "$pkg"; then
+        if install_package_no_recommends "$pkg"; then
+            SUCCESSFUL_PACKAGES+=("$pkg")
+        else
+            FAILED_PACKAGES+=("$pkg")
+            echo "Failed to install: $pkg" | tee -a "$LOG_FILE"
+        fi
+    else
+        echo -e "${YELLOW}Package not found in repository: $pkg${NC}"
+        FAILED_PACKAGES+=("$pkg")
+        echo "Package not found: $pkg" | tee -a "$LOG_FILE"
     fi
 done
 
@@ -146,16 +178,16 @@ if [[ "$SID_NEEDED" == true ]]; then
     echo ""
     echo -e "${YELLOW}Some packages require Debian Sid. Adding Sid sources...${NC}"
     echo "deb http://deb.debian.org/debian/ sid main contrib non-free non-free-firmware" \
-        | sudo tee /etc/apt/sources.list.d/sid.list > /dev/null
+        | tee /etc/apt/sources.list.d/sid.list > /dev/null
 
     # Configure APT pinning to prevent unintended upgrades from Sid
-    cat << 'EOF' | sudo tee /etc/apt/preferences.d/sid-pin > /dev/null
+    cat << 'EOF' | tee /etc/apt/preferences.d/sid-pin > /dev/null
 Package: *
 Pin: release a=unstable
 Pin-Priority: 100
 EOF
 
-    sudo apt update -o Dir::Etc::sourcelist="sources.list.d/sid.list" \
+    _APT_CMD apt update -o Dir::Etc::sourcelist="sources.list.d/sid.list" \
                     -o Dir::Etc::sourceparts="-" \
                     -o APT::Get::List-Cleanup="0"
     echo -e "${GREEN}✓ Sid sources added with pin priority 100 (explicit install only)${NC}"
@@ -169,34 +201,35 @@ for pkg in "${SID_PACKAGES[@]}"; do
             SUCCESSFUL_PACKAGES+=("$pkg")
         else
             FAILED_PACKAGES+=("$pkg")
-            echo "Failed to install: $pkg" | sudo tee -a "$LOG_FILE"
+            echo "Failed to install: $pkg" | tee -a "$LOG_FILE"
         fi
     else
         echo -e "${YELLOW}Package not found: $pkg${NC}"
         FAILED_PACKAGES+=("$pkg")
-        echo "Package not found: $pkg" | sudo tee -a "$LOG_FILE"
+        echo "Package not found: $pkg" | tee -a "$LOG_FILE"
     fi
 done
 
 echo ""
 echo "Enabling essential services..."
-sudo systemctl enable iwd
-sudo systemctl enable bluetooth
-sudo systemctl enable sddm
-sudo systemctl enable avahi-daemon
+systemctl enable iwd
+systemctl enable bluetooth
+systemctl enable sddm
+systemctl enable avahi-daemon
 
 echo ""
 echo "Setting up Hyprland configuration directories..."
-mkdir -p ~/.config/hypr
-mkdir -p ~/.config/waybar
-mkdir -p ~/.config/mako
-mkdir -p ~/.config/alacritty
+mkdir -p "$INSTALL_HOME/.config/hypr"
+mkdir -p "$INSTALL_HOME/.config/waybar"
+mkdir -p "$INSTALL_HOME/.config/mako"
+mkdir -p "$INSTALL_HOME/.config/alacritty"
+chown -R "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.config"
 
 # Configure iwd for network management
 echo ""
 echo "Configuring iwd for network management..."
-sudo mkdir -p /etc/iwd
-cat << 'EOF' | sudo tee /etc/iwd/main.conf > /dev/null
+mkdir -p /etc/iwd
+cat << 'EOF' > /etc/iwd/main.conf
 [General]
 EnableNetworkConfiguration=true
 NameResolvingService=systemd

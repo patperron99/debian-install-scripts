@@ -5,6 +5,15 @@ source "$(dirname "$0")/common_functions.sh"
 
 LOG_FILE="/var/log/install-extras-hyprland.log"
 
+# When called from chroot-postinstall.sh, USERNAME is passed as $1
+if [ -n "${1:-}" ]; then
+    INSTALL_USER="$1"
+    INSTALL_HOME="/home/$1"
+else
+    INSTALL_USER="${SUDO_USER:-$USER}"
+    INSTALL_HOME="$HOME"
+fi
+
 declare -a EXTRA_PACKAGES=(
     # Python
     "python3-pip"
@@ -26,10 +35,10 @@ declare -a EXTRA_PACKAGES=(
     "jq"
     "fastfetch"
 
-    # File manager + disk tools
+    # File manager
     "thunar"
-    "gnome-disk-utility"
-    "gnome-calculator"
+    # gnome-disk-utility handled in install-hyprland.sh (replaced by udiskie)
+    # gnome-calculator installed below without Recommends
 
     # Media
     "imv"
@@ -37,10 +46,8 @@ declare -a EXTRA_PACKAGES=(
     "mpv"
     "imagemagick"
 
-    # Avahi / GVFS
+    # Avahi (gvfs-backends and gnome-keyring handled in install-hyprland.sh without Recommends)
     "avahi-daemon"
-    "gvfs-backends"
-    "gnome-keyring"
 
     # Power menu (Wayland-native)
     "wlogout"
@@ -50,7 +57,7 @@ echo -e "${GREEN}=== Extras Installation ===${NC}"
 echo "Installs dev tools, fonts, Neovim, Tmux, Flatpak, and Zen browser."
 echo ""
 
-sudo apt update
+_APT_CMD apt update
 
 echo "Installing extra packages..."
 for pkg in "${EXTRA_PACKAGES[@]}"; do
@@ -59,7 +66,7 @@ for pkg in "${EXTRA_PACKAGES[@]}"; do
             SUCCESSFUL_PACKAGES+=("$pkg")
         else
             FAILED_PACKAGES+=("$pkg")
-            echo "Failed to install: $pkg" | sudo tee -a "$LOG_FILE"
+            echo "Failed to install: $pkg" | tee -a "$LOG_FILE"
         fi
     else
         echo -e "${YELLOW}Package not found in repository: $pkg (skipping)${NC}"
@@ -67,13 +74,29 @@ for pkg in "${EXTRA_PACKAGES[@]}"; do
     fi
 done
 
+# Install gnome-calculator without Recommends
+if check_package "gnome-calculator"; then
+    if install_package_no_recommends "gnome-calculator"; then
+        SUCCESSFUL_PACKAGES+=("gnome-calculator")
+    else
+        FAILED_PACKAGES+=("gnome-calculator")
+    fi
+fi
+
 # ─── FLATPAK: Flathub + Zen browser ───────────────────────────────────────────
 echo ""
-echo "Setting up Flatpak (Flathub + Zen browser)..."
-sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-if ! sudo flatpak install -y flathub app.zen_browser.zen 2>/dev/null; then
-    echo -e "${YELLOW}Failed to install Zen browser (skipping)${NC}"
-    FAILED_PACKAGES+=("zen-browser-flatpak")
+echo "Setting up Flatpak..."
+# remote-add is safe in chroot (writes to /var/lib/flatpak)
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
+# app install requires a D-Bus user session — deferred to first login if in chroot
+if [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ] || [ "$EUID" -ne 0 ]; then
+    if ! flatpak install -y flathub app.zen_browser.zen 2>/dev/null; then
+        echo -e "${YELLOW}Failed to install Zen browser (skipping)${NC}"
+        FAILED_PACKAGES+=("zen-browser-flatpak")
+    fi
+else
+    echo -e "${YELLOW}[DEFERRED] Zen browser Flatpak install requires a user session.${NC}"
+    echo "  Run after login: flatpak install -y flathub app.zen_browser.zen"
 fi
 
 # ─── NERD FONTS ───────────────────────────────────────────────────────────────
@@ -81,7 +104,7 @@ echo ""
 echo "Installing Nerd Fonts (JetBrainsMono, FiraCode, Hack)..."
 NERD_FONTS_VERSION="v3.2.1"
 NERD_FONTS_BASE="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONTS_VERSION}"
-FONTS_DIR="$HOME/.local/share/fonts/NerdFonts"
+FONTS_DIR="$INSTALL_HOME/.local/share/fonts/NerdFonts"
 mkdir -p "$FONTS_DIR"
 
 for font in JetBrainsMono FiraCode Hack; do
@@ -97,15 +120,19 @@ for font in JetBrainsMono FiraCode Hack; do
         echo -e "${YELLOW}  Failed to download $font (skipping)${NC}"
     fi
 done
-fc-cache -fv "$FONTS_DIR" >/dev/null 2>&1
+chown -R "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.local" 2>/dev/null || true
+runuser -l "$INSTALL_USER" -c "fc-cache -fv '$FONTS_DIR'" >/dev/null 2>&1 || \
+    fc-cache -fv "$FONTS_DIR" >/dev/null 2>&1 || true
 echo -e "${GREEN}Nerd Fonts installed to $FONTS_DIR${NC}"
 
 # ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────
 echo ""
 echo "Installing Tmux Plugin Manager (TPM)..."
-TPM_DIR="$HOME/.config/tmux/plugins/tpm"
+TPM_DIR="$INSTALL_HOME/.config/tmux/plugins/tpm"
 if [ ! -d "$TPM_DIR" ]; then
+    mkdir -p "$(dirname "$TPM_DIR")"
     if git clone --depth=1 https://github.com/tmux-plugins/tpm "$TPM_DIR" 2>/dev/null; then
+        chown -R "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.config/tmux"
         echo -e "${GREEN}TPM installed at $TPM_DIR${NC}"
         echo "Run 'tmux' then press Prefix+I to install plugins."
     else
@@ -116,7 +143,7 @@ else
 fi
 
 # ─── ENABLE AVAHI ─────────────────────────────────────────────────────────────
-sudo systemctl enable avahi-daemon 2>/dev/null || true
+systemctl enable avahi-daemon 2>/dev/null || true
 
 print_summary
 
