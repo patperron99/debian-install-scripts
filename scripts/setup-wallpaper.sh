@@ -8,7 +8,7 @@ echo "Configures swaybg — simple Wayland wallpaper utility"
 echo ""
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
-AUTOSTART_CONF="$HOME/.config/hypr/autostart.conf"
+SWAY_CONF="$HOME/.config/sway/config"
 
 # Ensure swaybg is installed
 if ! command -v swaybg &>/dev/null; then
@@ -39,11 +39,10 @@ if [ ${#WALLPAPERS[@]} -eq 0 ]; then
     exit 0
 fi
 
-# Detect currently active wallpaper from autostart.conf
+# Detect currently active wallpaper from sway config
 CURRENT_WALLPAPER=""
-if [ -f "$AUTOSTART_CONF" ]; then
-    CURRENT_WALLPAPER=$(grep -m1 'exec-once = swaybg' "$AUTOSTART_CONF" \
-        | grep -o '\-i [^ ]*' | cut -d' ' -f2)
+if [ -f "$SWAY_CONF" ]; then
+    CURRENT_WALLPAPER=$(grep -m1 'output \* bg' "$SWAY_CONF" | awk '{print $3}')
 fi
 
 # Show available wallpapers
@@ -90,15 +89,10 @@ case "$mode_sel" in
 esac
 echo -e "${GREEN}Mode: $MODE${NC}"
 
-# Update autostart.conf
-if [ -f "$AUTOSTART_CONF" ]; then
-    if grep -q 'exec-once = swaybg' "$AUTOSTART_CONF"; then
-        sed -i "s|exec-once = swaybg.*|exec-once = swaybg -i $SELECTED_WALLPAPER -m $MODE|" "$AUTOSTART_CONF"
-        echo -e "${GREEN}autostart.conf updated${NC}"
-    else
-        printf '\n# Wallpaper\nexec-once = swaybg -i %s -m %s\n' "$SELECTED_WALLPAPER" "$MODE" >> "$AUTOSTART_CONF"
-        echo -e "${GREEN}swaybg added to autostart.conf${NC}"
-    fi
+# Update sway config
+if [ -f "$SWAY_CONF" ]; then
+    sed -i "s|output \* bg .*|output * bg $SELECTED_WALLPAPER $MODE|" "$SWAY_CONF"
+    echo -e "${GREEN}sway config updated${NC}"
 fi
 
 # Apply immediately
@@ -124,10 +118,10 @@ elif pidof swaybg > /dev/null 2>&1; then
         _apply_swaybg "$WL_DISP" "$XDG_RT"
         echo -e "${GREEN}Wallpaper applied${NC}"
     else
-        echo -e "${YELLOW}Could not read Wayland env — run in your Hyprland terminal:${NC}"
+        echo -e "${YELLOW}Could not read Wayland env — run in your Sway terminal:${NC}"
         echo "  pkill swaybg; swaybg -i $SELECTED_WALLPAPER -m $MODE &"
     fi
-elif [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+elif [ -n "${SWAYSOCK:-}" ]; then
     swaybg -i "$SELECTED_WALLPAPER" -m "$MODE" &
     disown
     echo -e "${GREEN}swaybg started${NC}"

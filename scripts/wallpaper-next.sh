@@ -1,10 +1,10 @@
 #!/bin/bash
 # wallpaper-next.sh — Cycle to the next wallpaper in ~/Pictures/Wallpapers/
-# Installed to ~/.local/bin/wallpaper-next.sh by setup-hyprland-config.sh
-# Bound to SUPER+W in bindings.conf
+# Installed to ~/.local/bin/wallpaper-next.sh by setup-sway-config.sh
+# Bound to SUPER+W in sway config
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
-AUTOSTART_CONF="$HOME/.config/hypr/autostart.conf"
+SWAY_CONF="$HOME/.config/sway/config"
 
 shopt -s nullglob
 WALLPAPERS=("$WALLPAPER_DIR"/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP})
@@ -15,11 +15,11 @@ if [ ${#WALLPAPERS[@]} -eq 0 ]; then
     exit 0
 fi
 
-# Read current wallpaper from autostart.conf
+# Read current wallpaper from sway config
 CURRENT=""
-if [ -f "$AUTOSTART_CONF" ]; then
-    CURRENT=$(grep -m1 'exec-once = swaybg' "$AUTOSTART_CONF" \
-        | grep -o '\-i [^ ]*' | cut -d' ' -f2)
+if [ -f "$SWAY_CONF" ]; then
+    CURRENT=$(grep -m1 'output \* bg' "$SWAY_CONF" \
+        | awk '{print $3}')
 fi
 
 # Find index of current wallpaper, advance to next (circular)
@@ -33,13 +33,9 @@ done
 NEXT_IDX=$(( (CURRENT_IDX + 1) % ${#WALLPAPERS[@]} ))
 NEXT="${WALLPAPERS[$NEXT_IDX]}"
 
-# Persist to autostart.conf
-if [ -f "$AUTOSTART_CONF" ]; then
-    if grep -q 'exec-once = swaybg' "$AUTOSTART_CONF"; then
-        sed -i "s|exec-once = swaybg.*|exec-once = swaybg -i $NEXT -m fill|" "$AUTOSTART_CONF"
-    else
-        printf '\n# Wallpaper\nexec-once = swaybg -i %s -m fill\n' "$NEXT" >> "$AUTOSTART_CONF"
-    fi
+# Persist to sway config
+if [ -f "$SWAY_CONF" ]; then
+    sed -i "s|output \* bg .*|output * bg $NEXT fill|" "$SWAY_CONF"
 fi
 
 # Apply live

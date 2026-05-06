@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hyprland postinstall orchestrator — chroot-safe
+# Sway postinstall orchestrator — chroot-safe
 # Called from chroot_setup.sh after user creation.
 # $1: USERNAME (non-root user created during chroot_setup.sh)
 
@@ -22,25 +22,26 @@ section() {
     echo ""
 }
 
-# Step 1: Core Hyprland packages (apt as root — no sudo needed in chroot)
-section "1/6 — Core + Hyprland packages"
-bash "$SCRIPTS_DIR/install-hyprland.sh" "$USERNAME"
+# Step 1: Core Sway packages (apt as root — no sudo needed in chroot)
+section "1/6 — Core + Sway packages"
+bash "$SCRIPTS_DIR/install-sway.sh" "$USERNAME"
 
 # Step 2: Configuration files (user context — runuser sets HOME correctly)
 section "2/6 — Deploy configuration files"
-runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/setup-hyprland-config.sh'"
+runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/setup-sway-config.sh'"
 
 # Step 3: Extras — dev tools, nerd fonts, TPM (mixed root/user)
 section "3/6 — Extras (neovim, tmux, fonts, flatpak)"
-bash "$SCRIPTS_DIR/install-extras-hyprland.sh" "$USERNAME"
+bash "$SCRIPTS_DIR/install-extras-sway.sh" "$USERNAME"
 
 # Step 4: Theme — GTK, icons, cursor, Neovim (interactive, user context)
 section "4/6 — Theme (GTK, icons, cursor, Neovim)"
 runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/setup-theme.sh'"
 
-# Step 5: Lock screen — hyprlock + hypridle config files (user context)
-section "5/6 — Lock screen (hyprlock + hypridle)"
-runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/setup-hyprlock.sh'"
+# Step 5: Lock screen config (swaylock — config deployed with sway configs)
+section "5/6 — Lock screen (swaylock)"
+echo "swaylock config installed via setup-sway-config.sh"
+echo "swayidle runs as part of the Sway autostart in ~/.config/sway/config"
 
 # Step 6: Wallpapers — download only; interactive selection deferred
 section "6/6 — Wallpapers (download)"
@@ -82,10 +83,8 @@ TIMEREOF
 
 chown -R "$USERNAME:$USERNAME" "$USER_SYSTEMD_DIR"
 
-# Enable linger so user services start without an interactive login
 loginctl enable-linger "$USERNAME" 2>/dev/null || true
 
-# One-shot .bashrc snippet: enables the timer on first interactive login, then removes itself
 BASHRC="$INSTALL_HOME/.bashrc"
 cat >> "$BASHRC" << 'FIRSTLOGINEOF'
 
@@ -103,11 +102,11 @@ chown "$USERNAME:$USERNAME" "$BASHRC"
 
 # ─── Deferred steps ───────────────────────────────────────────────────────────
 echo ""
-echo -e "${YELLOW}[DEFERRED] The following require a running Hyprland session — run after first login:${NC}"
+echo -e "${YELLOW}[DEFERRED] The following require a running Sway session — run after first login:${NC}"
 echo "  Multi-monitor:  bash $SCRIPTS_DIR/setup-multimonitor.sh"
 echo "  Wallpaper pick: bash $SCRIPTS_DIR/setup-wallpaper.sh"
 echo "  Zen browser:    flatpak install -y flathub app.zen_browser.zen"
 
 section "Postinstall complete"
-echo "Hyprland configured for user: $USERNAME"
-echo "Reboot and select 'Hyprland' at the SDDM login screen."
+echo "Sway configured for user: $USERNAME"
+echo "Reboot and select 'Sway' at the SDDM login screen."

@@ -1,10 +1,9 @@
 #!/bin/bash
 # theme-picker.sh — Live theme switcher via wofi
-# Installed to ~/.local/bin/theme-picker.sh by setup-hyprland-config.sh
-# Bound to SUPER+SHIFT+T in bindings.conf
+# Installed to ~/.local/bin/theme-picker.sh by setup-sway-config.sh
+# Bound to SUPER+SHIFT+T in sway config
 
-HYPRLAND_CONF="$HOME/.config/hypr/looknfeel.conf"
-AUTOSTART_CONF="$HOME/.config/hypr/autostart.conf"
+SWAY_CONF="$HOME/.config/sway/config"
 GTK3_CONF="$HOME/.config/gtk-3.0/settings.ini"
 GTK4_CONF="$HOME/.config/gtk-4.0/settings.ini"
 ALACRITTY_CONF="$HOME/.config/alacritty/alacritty.toml"
@@ -138,16 +137,17 @@ apply_gtk_theme() {
     command -v gsettings &>/dev/null && gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme" 2>/dev/null || true
 }
 
-# ── Hyprland borders ─────────────────────────────────────────────────────────
-apply_hyprland_theme() {
+# ── Sway borders ─────────────────────────────────────────────────────────────
+apply_sway_theme() {
     local active="$1"
     local inactive="$2"
-    if [ -f "$HYPRLAND_CONF" ]; then
+    if [ -f "$SWAY_CONF" ]; then
         sed -i \
-            -e "s|col.active_border = .*|col.active_border = $active|" \
-            -e "s|col.inactive_border = .*|col.inactive_border = $inactive|" \
-            "$HYPRLAND_CONF"
-        command -v hyprctl &>/dev/null && hyprctl reload 2>/dev/null || true
+            -e "s|client.focused .*|client.focused          $active $active #ffffff $active $active|" \
+            -e "s|client.unfocused .*|client.unfocused        $inactive $inactive #888888 $inactive $inactive|" \
+            -e "s|client.focused_inactive .*|client.focused_inactive $inactive $inactive #888888 $inactive $inactive|" \
+            "$SWAY_CONF"
+        command -v swaymsg &>/dev/null && swaymsg reload 2>/dev/null || true
     fi
 }
 
@@ -344,7 +344,7 @@ GTK_THEME=$(echo "$THEME_DATA" | cut -d'|' -f3)
 ALACRITTY_PALETTE=$(echo "$THEME_DATA" | cut -d'|' -f4)
 NVIM_CS=$(echo "$THEME_DATA" | cut -d'|' -f5)
 
-apply_hyprland_theme "$ACTIVE_BORDER" "$INACTIVE_BORDER"
+apply_sway_theme "$ACTIVE_BORDER" "$INACTIVE_BORDER"
 apply_gtk_theme "$GTK_THEME"
 apply_alacritty_theme "$ALACRITTY_PALETTE"
 apply_waybar_theme "$CHOICE"
