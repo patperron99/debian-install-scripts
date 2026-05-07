@@ -38,9 +38,9 @@ bash "$SCRIPTS_DIR/install-extras-sway.sh" "$USERNAME"
 section "4/6 — Theme (GTK, icons, cursor, Neovim)"
 runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/setup-theme.sh'"
 
-# Step 5: Lock screen config (swaylock — config deployed with sway configs)
-section "5/6 — Lock screen (swaylock)"
-echo "swaylock config installed via setup-sway-config.sh"
+# Step 5: Lock screen config (hyprlock — config deployed with sway configs)
+section "5/6 — Lock screen (hyprlock)"
+echo "hyprlock config installed to ~/.config/hypr/hyprlock.conf via setup-sway-config.sh"
 echo "swayidle runs as part of the Sway autostart in ~/.config/sway/config"
 
 # Step 6: Wallpapers — download only; interactive selection deferred
@@ -109,4 +109,4 @@ echo "  Zen browser:    flatpak install -y flathub app.zen_browser.zen"
 
 section "Postinstall complete"
 echo "Sway configured for user: $USERNAME"
-echo "Reboot — greetd/tuigreet démarrera Sway automatiquement."
+echo "Reboot — autologin on TTY1, Sway starts automatically via ~/.bash_profile."

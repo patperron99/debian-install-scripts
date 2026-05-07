@@ -43,6 +43,21 @@ install_package_no_recommends() {
     fi
 }
 
+# Add Debian testing sources with low-priority pin (idempotent)
+setup_testing_sources() {
+    if [ ! -f /etc/apt/sources.list.d/testing.list ]; then
+        echo "deb http://deb.debian.org/debian testing main contrib non-free non-free-firmware" \
+            > /etc/apt/sources.list.d/testing.list
+        cat > /etc/apt/preferences.d/testing-pin << 'EOF'
+Package: *
+Pin: release a=testing
+Pin-Priority: 100
+EOF
+        apt update -qq
+        echo -e "${GREEN}Testing sources configured (priority 100 — explicit install only)${NC}"
+    fi
+}
+
 # Function to print installation summary
 print_summary() {
     echo -e "\n${GREEN}Installation Summary:${NC}"

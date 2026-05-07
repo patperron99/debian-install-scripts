@@ -169,8 +169,9 @@ mkdir -p /mnt/boot/efi
 mount "${DISK}${PART1}" /mnt/boot/efi
 
 # Ask for release option
-ask "Choose Debian release (stable, testing, unstable): "
+ask "Choose Debian release [stable]: "
 read -p "" RELEASE
+RELEASE="${RELEASE:-stable}"
 
 # Install base system
 log "Installing base Debian system..."

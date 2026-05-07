@@ -24,7 +24,6 @@ declare -a EXTRA_PACKAGES=(
     "shellcheck"
     "npm"
     "flatpak"
-    "neovim"
     "fd-find"
     "ripgrep"
     "psmisc"
@@ -58,6 +57,12 @@ for pkg in "${EXTRA_PACKAGES[@]}"; do
         FAILED_PACKAGES+=("$pkg")
     fi
 done
+
+echo ""
+echo "Installing neovim from testing (stable version is too old for LazyVim)..."
+setup_testing_sources
+apt-get install -y -t testing neovim
+echo -e "${GREEN}✓ neovim installed from testing${NC}"
 
 if check_package "gnome-calculator"; then
     if install_package_no_recommends "gnome-calculator"; then

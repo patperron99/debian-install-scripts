@@ -29,7 +29,6 @@ declare -a PACKAGES=(
     "sway"
     "swaybg"
     "swayidle"
-    "swaylock"
     "xdg-desktop-portal-wlr"
 
     # Status bar
@@ -96,10 +95,6 @@ declare -a PACKAGES=(
     "qtwayland5"
     "qt6-wayland"
 
-    # Display manager (Wayland-native, no X11 deps)
-    "greetd"
-    "tuigreet"
-
     # Base tools
     "git"
     "curl"
@@ -152,10 +147,15 @@ for pkg in nautilus gnome-keyring gvfs-backends; do
 done
 
 echo ""
+echo "Installing hyprlock from testing..."
+setup_testing_sources
+apt-get install -y -t testing hyprlock
+echo -e "${GREEN}✓ hyprlock installed from testing${NC}"
+
+echo ""
 echo "Enabling essential services..."
 systemctl enable iwd
 systemctl enable bluetooth
-systemctl enable greetd
 systemctl enable avahi-daemon
 systemctl enable --now power-profiles-daemon
 
@@ -188,27 +188,18 @@ EOF
 echo -e "${GREEN}✓ iwd configured${NC}"
 
 echo ""
-echo "Creating greeter system user..."
-if ! id greeter &>/dev/null; then
-    useradd --system --no-create-home --shell /usr/sbin/nologin greeter
-    usermod -aG video greeter
-    echo -e "${GREEN}✓ greeter user created${NC}"
-else
-    echo -e "${GREEN}✓ greeter user already exists${NC}"
-fi
-
-echo ""
-echo "Configuring greetd..."
-mkdir -p /etc/greetd
-cat << 'EOF' > /etc/greetd/config.toml
-[terminal]
-vt = 1
-
-[default_session]
-command = "tuigreet --time --remember --remember-session --sessions /usr/share/wayland-sessions"
-user = "greeter"
+echo "Configuring TTY1 autologin for $INSTALL_USER..."
+mkdir -p /etc/systemd/system/getty@tty1.service.d
+cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf << EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty --autologin $INSTALL_USER --noclear %I \$TERM
+Type=simple
 EOF
-echo -e "${GREEN}✓ greetd configured${NC}"
+systemctl unmask getty@tty1.service 2>/dev/null || true
+systemctl enable getty@tty1.service 2>/dev/null || true
+systemctl daemon-reload 2>/dev/null || true
+echo -e "${GREEN}✓ Autologin configured for $INSTALL_USER on TTY1${NC}"
 
 print_summary
 
@@ -217,6 +208,7 @@ echo -e "${GREEN}=== Installation Complete ===${NC}"
 echo ""
 echo -e "${YELLOW}Next step:${NC}"
 echo "  Run: bash scripts/setup-sway-config.sh"
+echo "  Reboot — autologin on TTY1, Sway starts automatically via ~/.bash_profile"
 echo ""
 
 if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then

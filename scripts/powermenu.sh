@@ -8,7 +8,7 @@ CHOICE=$(printf '%b' "$OPTIONS" | wofi --dmenu --prompt "Power" \
     --width 200 --height 250 --no-actions --insensitive)
 
 case "$CHOICE" in
-    Lock)      swaylock ;;
+    Lock)      hyprlock ;;
     Logout)    swaymsg exit ;;
     Suspend)   systemctl suspend ;;
     Hibernate) systemctl hibernate ;;

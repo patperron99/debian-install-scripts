@@ -20,7 +20,7 @@ section "Core binaries"
 
 REQUIRED_BINS=(
     "sway:sway"
-    "swaylock:swaylock"
+    "hyprlock:hyprlock"
     "swayidle:swayidle"
     "waybar:waybar"
     "mako:mako-notifier"
@@ -33,7 +33,6 @@ REQUIRED_BINS=(
     "pamixer:pamixer"
     "brightnessctl:brightnessctl"
     "playerctl:playerctl"
-    "tuigreet:tuigreet"
     "pipewire:pipewire"
     "wireplumber:wireplumber"
     "iwctl:iwd"
@@ -75,7 +74,7 @@ done
 # ─── SYSTEMD SERVICES ─────────────────────────────────────────────────────────
 section "Systemd services (enabled)"
 
-REQUIRED_SERVICES=(greetd iwd bluetooth avahi-daemon)
+REQUIRED_SERVICES=(iwd bluetooth avahi-daemon)
 
 for svc in "${REQUIRED_SERVICES[@]}"; do
     if systemctl is-enabled "$svc" &>/dev/null; then
@@ -90,7 +89,7 @@ section "Configuration files"
 
 CONFIG_FILES=(
     "$HOME/.config/sway/config"
-    "$HOME/.config/sway/swaylock.conf"
+    "$HOME/.config/hypr/hyprlock.conf"
     "$HOME/.config/waybar/config"
     "$HOME/.config/waybar/style.css"
     "$HOME/.config/kanshi/config"

@@ -58,11 +58,11 @@ exec wl-paste --type image --watch cliphist store
 exec swayidle -w \
     timeout 300  'brightnessctl -s set 10%' \
         resume   'brightnessctl -r' \
-    timeout 600  'loginctl lock-session' \
+    timeout 600  'hyprlock' \
     timeout 900  'swaymsg "output * dpms off"' \
         resume   'swaymsg "output * dpms on"' \
     timeout 1800 'systemctl suspend' \
-    before-sleep 'loginctl lock-session'
+    before-sleep 'hyprlock'
 
 # ── Window Rules ──────────────────────────────────────────────────────────────
 for_window [app_id="org.gnome.Calculator"] floating enable
@@ -138,7 +138,7 @@ bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+ctrl+minus  scratchpad show
 
 # Lock / power
-bindsym $mod+l      exec swaylock
+bindsym $mod+l      exec hyprlock
 bindsym $mod+Escape exec bash ~/.local/bin/powermenu.sh
 
 # Clipboard history

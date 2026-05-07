@@ -91,7 +91,7 @@ show_menu() {
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${YELLOW}Run from the repository root directory.${NC}"
-echo -e "${YELLOW}Requires Debian Testing (Forky) — no Sid needed.${NC}"
+echo -e "${YELLOW}Requires Debian Stable. Testing sources added automatically for neovim and hyprlock.${NC}"
 
 while true; do
     show_menu
@@ -112,7 +112,7 @@ while true; do
             echo ""
             echo -e "${GREEN}═══════════════════════════════════════════${NC}"
             echo -e "${GREEN}  Setup complete. Reboot to start Sway.    ${NC}"
-            echo -e "${GREEN}  greetd/tuigreet lancera Sway au démarrage.${NC}"
+            echo -e "${GREEN}  Autologin on TTY1 — Sway starts automatically.${NC}"
             echo -e "${GREEN}═══════════════════════════════════════════${NC}"
             echo ""
             break

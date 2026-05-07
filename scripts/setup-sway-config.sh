@@ -33,7 +33,7 @@ mkdir -p "$HOME/Pictures/Wallpapers" "$HOME/Pictures/Screenshots" "$HOME/Videos"
 echo ""
 echo "Backing up existing configuration files..."
 mkdir -p "$CONFIG_DIR"
-for file in config swaylock.conf; do
+for file in config; do
     if [ -f "$CONFIG_DIR/$file" ]; then
         cp "$CONFIG_DIR/$file" "$CONFIG_DIR/$file.backup"
         echo -e "${GREEN}Backed up: $file${NC}"
@@ -43,9 +43,15 @@ done
 # Install sway config
 echo ""
 echo "Installing Sway configuration files..."
-cp "$CONFIGS_DIR/sway/config"         "$CONFIG_DIR/config"
-cp "$CONFIGS_DIR/sway/swaylock.conf"  "$CONFIG_DIR/swaylock.conf"
-echo -e "${GREEN}Installed: ~/.config/sway/${NC}"
+cp "$CONFIGS_DIR/sway/config" "$CONFIG_DIR/config"
+echo -e "${GREEN}Installed: ~/.config/sway/config${NC}"
+
+# Install hyprlock config (hyprlock looks for it in ~/.config/hypr/)
+echo ""
+echo "Installing hyprlock configuration..."
+mkdir -p "$HOME/.config/hypr"
+cp "$CONFIGS_DIR/hypr/hyprlock.conf" "$HOME/.config/hypr/hyprlock.conf"
+echo -e "${GREEN}Installed: ~/.config/hypr/hyprlock.conf${NC}"
 
 # Install mako notification config
 echo ""
@@ -127,6 +133,9 @@ export GDK_BACKEND=wayland
 export SDL_VIDEODRIVER=wayland
 export CLUTTER_BACKEND=wayland
 export XCURSOR_SIZE=24
+
+# Auto-start Sway on TTY1 login (autologin via getty)
+[[ -z "${WAYLAND_DISPLAY:-}" && "${XDG_VTNR:-}" -eq 1 ]] && exec sway
 EOF
     echo -e "${GREEN}Installed: Wayland env vars in ~/.bash_profile${NC}"
 else
@@ -151,7 +160,8 @@ echo ""
 echo -e "${GREEN}=== Configuration Setup Complete ===${NC}"
 echo ""
 echo -e "${YELLOW}Configuration files installed:${NC}"
-echo "  - ~/.config/sway/              (Sway configs)"
+echo "  - ~/.config/sway/              (Sway config)"
+echo "  - ~/.config/hypr/hyprlock.conf (lock screen)"
 echo "  - ~/.config/mako/config        (notification daemon)"
 echo "  - ~/.config/kanshi/config      (multi-monitor profiles)"
 echo "  - ~/.config/waybar/            (status bar)"
@@ -167,7 +177,7 @@ echo "1. Set wallpaper:    bash scripts/setup-wallpaper.sh"
 echo "2. Configure theme:  bash scripts/setup-theme.sh"
 echo "3. Verify install:   bash scripts/verify-install.sh"
 echo "4. Add wallpaper images to ~/Pictures/Wallpapers/"
-echo "5. Reboot — greetd/tuigreet lancera automatiquement Sway"
+echo "5. Reboot — autologin on TTY1, Sway starts automatically"
 echo ""
 echo -e "${GREEN}Key shortcuts:${NC}"
 echo "  SUPER + Return    : Open terminal"
