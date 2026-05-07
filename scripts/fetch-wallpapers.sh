@@ -58,6 +58,51 @@ done
 echo ""
 echo -e "${GREEN}Done.${NC} Downloaded: $DOWNLOADED  Skipped: $SKIPPED  Failed: $FAILED"
 echo "Wallpapers stored in: $WALLPAPER_DIR"
+
+# ── Theme-specific wallpapers ─────────────────────────────────────────────────
+THEME_DIR="$WALLPAPER_DIR/themes"
+mkdir -p "$THEME_DIR"
+
+echo ""
+echo "Downloading theme-specific wallpapers to $THEME_DIR ..."
+
+declare -a THEME_WALLPAPERS=(
+    "catppuccin-mocha.jpg|https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=2560&q=85&fm=jpg"
+    "tokyo-night.jpg|https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=2560&q=85&fm=jpg"
+    "gruvbox-dark.jpg|https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=2560&q=85&fm=jpg"
+    "nord.jpg|https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2560&q=85&fm=jpg"
+    "rose-pine.jpg|https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=2560&q=85&fm=jpg"
+)
+
+THEME_DOWNLOADED=0
+THEME_SKIPPED=0
+THEME_FAILED=0
+
+for entry in "${THEME_WALLPAPERS[@]}"; do
+    FILENAME="${entry%%|*}"
+    URL="${entry##*|}"
+    DEST="$THEME_DIR/$FILENAME"
+
+    if [ -f "$DEST" ]; then
+        echo -e "  ${YELLOW}SKIP${NC}  $FILENAME (already exists)"
+        ((THEME_SKIPPED++))
+        continue
+    fi
+
+    printf "  Downloading %s ... " "$FILENAME"
+    if curl -fsSL --connect-timeout 10 --max-time 60 -o "$DEST" "$URL" 2>/dev/null; then
+        echo -e "${GREEN}OK${NC}"
+        ((THEME_DOWNLOADED++))
+    else
+        echo -e "${RED}FAIL${NC}"
+        rm -f "$DEST"
+        ((THEME_FAILED++))
+    fi
+done
+
+echo -e "${GREEN}Done.${NC} Downloaded: $THEME_DOWNLOADED  Skipped: $THEME_SKIPPED  Failed: $THEME_FAILED"
+echo "Theme wallpapers stored in: $THEME_DIR"
 echo ""
 echo "Use 'bash scripts/setup-wallpaper.sh' to select one interactively,"
-echo "or press SUPER+W in Hyprland to cycle through them."
+echo "or press SUPER+W in Sway to cycle through them."
+echo "Press SUPER+SHIFT+T to switch themes (wallpaper changes automatically)."

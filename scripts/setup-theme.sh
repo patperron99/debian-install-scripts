@@ -10,8 +10,7 @@ echo -e "${GREEN}=== Theme Configuration ===${NC}"
 echo "Configures GTK theme, icons, cursor, Qt5, and Neovim"
 echo ""
 
-ENVS_CONF="$HOME/.config/hypr/envs.conf"
-AUTOSTART_CONF="$HOME/.config/hypr/autostart.conf"
+SWAY_CONF="$HOME/.config/sway/config"
 
 # --- PACKAGE INSTALLATION ---
 declare -a THEME_PACKAGES=(
@@ -155,10 +154,10 @@ EOF
 
 echo -e "${GREEN}Written: ~/.config/xsettingsd/xsettingsd.conf${NC}"
 
-# Add xsettingsd to autostart if not already present
-if [ -f "$AUTOSTART_CONF" ] && ! grep -q "xsettingsd" "$AUTOSTART_CONF"; then
-    printf '\n# GTK settings daemon (for Wayland sessions)\nexec-once = xsettingsd\n' >> "$AUTOSTART_CONF"
-    echo -e "${GREEN}xsettingsd added to autostart.conf${NC}"
+# Add xsettingsd to sway autostart if not already present
+if [ -f "$SWAY_CONF" ] && ! grep -q "exec xsettingsd" "$SWAY_CONF"; then
+    printf '\nexec xsettingsd\n' >> "$SWAY_CONF"
+    echo -e "${GREEN}xsettingsd added to sway config${NC}"
 fi
 
 # --- QT5CT ---
@@ -178,21 +177,30 @@ EOF
 
 echo -e "${GREEN}Written: ~/.config/qt5ct/qt5ct.conf${NC}"
 
-# --- UPDATE envs.conf ---
-if [ -f "$ENVS_CONF" ]; then
-    # Update XCURSOR_SIZE if present, else append
-    if grep -q "XCURSOR_SIZE" "$ENVS_CONF"; then
-        sed -i "s|env = XCURSOR_SIZE,.*|env = XCURSOR_SIZE,$CURSOR_SIZE|" "$ENVS_CONF"
+# --- UPDATE ~/.bash_profile cursor env vars ---
+PROFILE="$HOME/.bash_profile"
+if [ -f "$PROFILE" ]; then
+    if grep -q "XCURSOR_SIZE" "$PROFILE"; then
+        sed -i "s|^export XCURSOR_SIZE=.*|export XCURSOR_SIZE=$CURSOR_SIZE|" "$PROFILE"
     else
-        echo "env = XCURSOR_SIZE,$CURSOR_SIZE" >> "$ENVS_CONF"
+        echo "export XCURSOR_SIZE=$CURSOR_SIZE" >> "$PROFILE"
     fi
-    # Add XCURSOR_THEME if not present
-    if ! grep -q "XCURSOR_THEME" "$ENVS_CONF"; then
-        echo "env = XCURSOR_THEME,$CURSOR_THEME" >> "$ENVS_CONF"
+    if grep -q "XCURSOR_THEME" "$PROFILE"; then
+        sed -i "s|^export XCURSOR_THEME=.*|export XCURSOR_THEME=$CURSOR_THEME|" "$PROFILE"
     else
-        sed -i "s|env = XCURSOR_THEME,.*|env = XCURSOR_THEME,$CURSOR_THEME|" "$ENVS_CONF"
+        echo "export XCURSOR_THEME=$CURSOR_THEME" >> "$PROFILE"
     fi
-    echo -e "${GREEN}envs.conf updated (XCURSOR_THEME, XCURSOR_SIZE)${NC}"
+    echo -e "${GREEN}Cursor env vars updated in ~/.bash_profile${NC}"
+fi
+
+# --- UPDATE sway seat xcursor ---
+if [ -f "$SWAY_CONF" ]; then
+    if grep -q "seat seat0 xcursor_theme" "$SWAY_CONF"; then
+        sed -i "s|seat seat0 xcursor_theme .*|seat seat0 xcursor_theme $CURSOR_THEME $CURSOR_SIZE|" "$SWAY_CONF"
+    else
+        printf '\nseat seat0 xcursor_theme %s %s\n' "$CURSOR_THEME" "$CURSOR_SIZE" >> "$SWAY_CONF"
+    fi
+    echo -e "${GREEN}Sway xcursor_theme updated${NC}"
 fi
 
 # --- NEOVIM SETUP ---
@@ -242,4 +250,4 @@ echo -e "${GREEN}Theme setup complete.${NC}"
 echo "GTK: $GTK_THEME | Icons: $ICON_THEME | Cursor: $CURSOR_THEME"
 echo ""
 echo "Run 'nwg-look' to fine-tune GTK settings visually."
-echo "Restart Hyprland or re-login to apply all changes."
+echo "Restart Sway or re-login to apply all changes."

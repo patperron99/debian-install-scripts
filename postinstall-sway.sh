@@ -112,7 +112,7 @@ while true; do
             echo ""
             echo -e "${GREEN}═══════════════════════════════════════════${NC}"
             echo -e "${GREEN}  Setup complete. Reboot to start Sway.    ${NC}"
-            echo -e "${GREEN}  At SDDM, select 'Sway'.                  ${NC}"
+            echo -e "${GREEN}  greetd/tuigreet lancera Sway au démarrage.${NC}"
             echo -e "${GREEN}═══════════════════════════════════════════${NC}"
             echo ""
             break

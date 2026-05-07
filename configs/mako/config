@@ -1,5 +1,6 @@
 # Mako notification daemon configuration
 # https://github.com/emersion/mako
+# Colors are managed by theme-picker.sh (SUPER+SHIFT+T) — default: Catppuccin Mocha
 
 default-timeout=5000
 ignore-timeout=0

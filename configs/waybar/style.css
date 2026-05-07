@@ -9,7 +9,7 @@
 }
 
 #waybar {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.9);
   border-radius: 4px;
   margin: 8px;
   padding: 2px;
@@ -47,7 +47,7 @@
   color: @urgent_text;
 }
 
-#backlight, #custom-vpn, #custom-updates, #idle_inhibitor, #pulseaudio, #cpu, #memory, #battery, #network, #bluetooth, #clock {
+#backlight, #custom-powerprofile, #custom-vpn, #custom-updates, #idle_inhibitor, #pulseaudio, #cpu, #memory, #battery, #network, #bluetooth, #clock {
   color: @fg;
   border-radius: 4px;
   padding: 3px 10px;

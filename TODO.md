@@ -131,7 +131,7 @@ Généré par `setup-multimonitor.sh` via `hyprctl monitors` + règles `workspac
 
 ## Wishlist / Futur
 
-- [ ] Thème SDDM (sugar-candy ou sddm-astronaut)
+- [ ] Thème tuigreet (couleurs, greeting personnalisé)
 - [ ] Script de détection GPU (Intel/AMD/NVIDIA) → env vars dans `envs.conf`
 - [ ] Test XDG portals (screenshot + file picker)
 - [ ] Revue des permissions sandbox Flatpak

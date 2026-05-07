@@ -33,7 +33,7 @@ REQUIRED_BINS=(
     "pamixer:pamixer"
     "brightnessctl:brightnessctl"
     "playerctl:playerctl"
-    "sddm:sddm"
+    "tuigreet:tuigreet"
     "pipewire:pipewire"
     "wireplumber:wireplumber"
     "iwctl:iwd"
@@ -75,7 +75,7 @@ done
 # ─── SYSTEMD SERVICES ─────────────────────────────────────────────────────────
 section "Systemd services (enabled)"
 
-REQUIRED_SERVICES=(sddm iwd bluetooth avahi-daemon)
+REQUIRED_SERVICES=(greetd iwd bluetooth avahi-daemon)
 
 for svc in "${REQUIRED_SERVICES[@]}"; do
     if systemctl is-enabled "$svc" &>/dev/null; then

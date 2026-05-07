@@ -95,39 +95,12 @@ if [ -f "$SWAY_CONF" ]; then
     echo -e "${GREEN}sway config updated${NC}"
 fi
 
-# Apply immediately
+# Apply immediately via swaymsg (sway manages wallpaper natively via output * bg)
 echo ""
-_apply_swaybg() {
-    local wl="$1" xdg="$2"
-    pkill swaybg 2>/dev/null || true
-    sleep 0.3
-    env WAYLAND_DISPLAY="$wl" XDG_RUNTIME_DIR="$xdg" \
-        swaybg -i "$SELECTED_WALLPAPER" -m "$MODE" &
-    disown
-}
-
-if [ -n "${WAYLAND_DISPLAY:-}" ]; then
-    _apply_swaybg "$WAYLAND_DISPLAY" "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if swaymsg "output '*' bg $SELECTED_WALLPAPER $MODE" 2>/dev/null; then
     echo -e "${GREEN}Wallpaper applied${NC}"
-elif pidof swaybg > /dev/null 2>&1; then
-    SWAYBG_PID=$(pidof swaybg | awk '{print $1}')
-    SWAYBG_ENV=$(cat /proc/"$SWAYBG_PID"/environ 2>/dev/null | tr '\0' '\n')
-    WL_DISP=$(printf '%s' "$SWAYBG_ENV" | grep '^WAYLAND_DISPLAY=' | cut -d= -f2-)
-    XDG_RT=$(printf '%s' "$SWAYBG_ENV" | grep '^XDG_RUNTIME_DIR=' | cut -d= -f2-)
-    if [ -n "$WL_DISP" ] && [ -n "$XDG_RT" ]; then
-        _apply_swaybg "$WL_DISP" "$XDG_RT"
-        echo -e "${GREEN}Wallpaper applied${NC}"
-    else
-        echo -e "${YELLOW}Could not read Wayland env — run in your Sway terminal:${NC}"
-        echo "  pkill swaybg; swaybg -i $SELECTED_WALLPAPER -m $MODE &"
-    fi
-elif [ -n "${SWAYSOCK:-}" ]; then
-    swaybg -i "$SELECTED_WALLPAPER" -m "$MODE" &
-    disown
-    echo -e "${GREEN}swaybg started${NC}"
 else
-    echo -e "${YELLOW}No active Wayland session detected.${NC}"
-    echo "Wallpaper will take effect on next login."
+    echo -e "${YELLOW}No active Sway session — wallpaper takes effect on next login.${NC}"
 fi
 
 echo ""

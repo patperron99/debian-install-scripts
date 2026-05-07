@@ -41,7 +41,7 @@ bash scripts/setup-hyprland-config.sh
 - **Visionneuses** : evince, imv
 - **Polices** : fonts-noto, fonts-font-awesome, fonts-jetbrains-mono
 - **Terminal** : alacritty
-- **Système** : brightnessctl, playerctl, hyprpolkitagent, sddm
+- **Système** : brightnessctl, playerctl, hyprpolkitagent, greetd, tuigreet
 - **Médias** : mpv, imagemagick
 
 ### ⚠️ Disponibles depuis Sid (ajoutés automatiquement)

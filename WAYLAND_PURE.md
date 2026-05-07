@@ -30,7 +30,7 @@ Cette version des scripts est basée sur les packages utilisés par **Omarchy** 
 | `evince` | Lecteur PDF | GNOME mais Wayland natif |
 | `imv` | Visionneuse images | Wayland natif |
 | `hyprpolkitagent` | Authentification | Wayland natif (Hyprland) |
-| `sddm` | Display manager | Wayland support |
+| `greetd` + `tuigreet` | Display manager | Wayland-pur, zéro dépendance X11 |
 | `qtwayland5` | Support Qt Wayland | Pour apps Qt |
 | `qt6-wayland` | Support Qt6 Wayland | Pour apps Qt6 |
 | `avahi-daemon` | mDNS/zeroconf | Services réseau |
@@ -125,18 +125,18 @@ Oui, c'est GNOME, **MAIS** :
 - `lf` (TUI, rapide)
 - `pcmanfm-qt` (GUI Qt, mais peut tirer deps)
 
-### Display manager : SDDM
+### Display manager : greetd + tuigreet
 
-**Support Wayland complet**, thèmes modernes disponibles.
+**Wayland-pur, zéro dépendance X11.** greetd est un daemon PAM minimal, tuigreet est un greeter TUI. SDDM tirait `x11-common`, `xserver-xorg` et plusieurs libs X11.
 
-Alternative : connexion en TTY puis `Hyprland` direct.
+Alternative : connexion directe en TTY puis lancement manuel du WM.
 
 ## Services systemd activés
 
 ```bash
 iwd              # WiFi/réseau
 bluetooth        # Bluetooth
-sddm             # Display manager
+greetd           # Display manager
 avahi-daemon     # mDNS
 ```
 
@@ -275,7 +275,7 @@ Déjà dans le script de compilation (option 6).
 | Notifs | mako | mako ✅ |
 | Launcher | walker | wofi (walker à venir) |
 | Terminal | Alacritty | Alacritty ✅ |
-| DM | SDDM | SDDM ✅ |
+| DM | SDDM | greetd + tuigreet ✅ |
 | Bluetooth | bluetui | CLI (bluetui à compiler) |
 
 **Similarité : ~90%** - seuls walker et bluetui manquent.

@@ -46,7 +46,7 @@ The interactive menu lets you run everything at once or step by step:
   9) Verify installation
 ```
 
-Reboot when done — at SDDM, select **Hyprland**.
+Reboot when done — greetd/tuigreet lancera **Hyprland** automatiquement.
 
 ---
 
@@ -138,7 +138,7 @@ bash postinstall-hyprland.sh
 
 Installs the full Hyprland ecosystem from APT. Automatically adds Sid sources if needed and pins them to prevent unintended upgrades.
 
-**Forky:** waybar, wofi, mako-notifier, grim, slurp, kanshi, alacritty, sddm, wf-recorder, swaybg, and more.  
+**Forky:** waybar, wofi, mako-notifier, grim, slurp, kanshi, alacritty, greetd, tuigreet, wf-recorder, swaybg, and more.  
 **Sid:** hyprland, xdg-desktop-portal-hyprland, hyprlock, hypridle, hyprpicker, swayosd, cliphist.
 
 ```bash

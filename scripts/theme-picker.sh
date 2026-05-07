@@ -12,120 +12,22 @@ NVIM_CS_FILE="$HOME/.config/nvim/lua/plugins/colorscheme.lua"
 WALLPAPER_THEMES_DIR="$HOME/Pictures/Wallpapers/themes"
 
 # ── Theme definitions ────────────────────────────────────────────────────────
-# Format: name|border_active|border_inactive|gtk_theme|alacritty_palette|nvim_cs
+# Format: name|border_active|border_inactive|gtk_theme|alacritty_slug|nvim_cs
 declare -A THEMES
 THEMES=(
-    ["Catppuccin Mocha"]="rgba(cba6f7ee) rgba(89dcebee) 45deg|rgba(585b70aa)|Adwaita:dark|catppuccin-mocha|catppuccin"
-    ["Tokyo Night"]="rgba(7aa2f7ee) rgba(bb9af7ee) 45deg|rgba(414868aa)|Adwaita:dark|tokyo-night|tokyonight-night"
-    ["Gruvbox Dark"]="rgba(d79921ee) rgba(689d6aee) 45deg|rgba(504945aa)|Adwaita:dark|gruvbox-dark|gruvbox"
-    ["Nord"]="rgba(88c0d0ee) rgba(81a1c1ee) 45deg|rgba(4c566aaa)|Adwaita:dark|nord|nord"
-    ["Rose Pine"]="rgba(c4a7e7ee) rgba(ebbcbaee) 45deg|rgba(403d52aa)|Adwaita:dark|rose-pine|rose-pine"
+    ["Catppuccin Mocha"]="#cba6f7|#585b70|Adwaita:dark|catppuccin-mocha|catppuccin"
+    ["Tokyo Night"]="#7aa2f7|#414868|Adwaita:dark|tokyo-night|tokyonight-night"
+    ["Gruvbox Dark"]="#d79921|#504945|Adwaita:dark|gruvbox-dark|gruvbox"
+    ["Nord"]="#88c0d0|#4c566a|Adwaita:dark|nord|nord"
+    ["Rose Pine"]="#c4a7e7|#403d52|Adwaita:dark|rose-pine|rose-pine"
 )
 
-# ── Alacritty color palettes ──────────────────────────────────────────────────
+# ── Alacritty theme (via import file) ────────────────────────────────────────
 apply_alacritty_theme() {
-    local theme="$1"
-    [ ! -f "$ALACRITTY_CONF" ] && return
-
-    case "$theme" in
-        catppuccin-mocha)
-            cat > /tmp/alacritty-colors.toml << 'EOF'
-[colors.primary]
-background = "#1e1e2e"
-foreground = "#cdd6f4"
-
-[colors.normal]
-black   = "#45475a"
-red     = "#f38ba8"
-green   = "#a6e3a1"
-yellow  = "#f9e2af"
-blue    = "#89b4fa"
-magenta = "#f5c2e7"
-cyan    = "#94e2d5"
-white   = "#bac2de"
-EOF
-            ;;
-        tokyo-night)
-            cat > /tmp/alacritty-colors.toml << 'EOF'
-[colors.primary]
-background = "#1a1b26"
-foreground = "#c0caf5"
-
-[colors.normal]
-black   = "#15161e"
-red     = "#f7768e"
-green   = "#9ece6a"
-yellow  = "#e0af68"
-blue    = "#7aa2f7"
-magenta = "#bb9af7"
-cyan    = "#7dcfff"
-white   = "#a9b1d6"
-EOF
-            ;;
-        gruvbox-dark)
-            cat > /tmp/alacritty-colors.toml << 'EOF'
-[colors.primary]
-background = "#282828"
-foreground = "#ebdbb2"
-
-[colors.normal]
-black   = "#282828"
-red     = "#cc241d"
-green   = "#98971a"
-yellow  = "#d79921"
-blue    = "#458588"
-magenta = "#b16286"
-cyan    = "#689d6a"
-white   = "#a89984"
-EOF
-            ;;
-        nord)
-            cat > /tmp/alacritty-colors.toml << 'EOF'
-[colors.primary]
-background = "#2e3440"
-foreground = "#d8dee9"
-
-[colors.normal]
-black   = "#3b4252"
-red     = "#bf616a"
-green   = "#a3be8c"
-yellow  = "#ebcb8b"
-blue    = "#81a1c1"
-magenta = "#b48ead"
-cyan    = "#88c0d0"
-white   = "#e5e9f0"
-EOF
-            ;;
-        rose-pine)
-            cat > /tmp/alacritty-colors.toml << 'EOF'
-[colors.primary]
-background = "#191724"
-foreground = "#e0def4"
-
-[colors.normal]
-black   = "#26233a"
-red     = "#eb6f92"
-green   = "#31748f"
-yellow  = "#f6c177"
-blue    = "#9ccfd8"
-magenta = "#c4a7e7"
-cyan    = "#ebbcba"
-white   = "#e0def4"
-EOF
-            ;;
-    esac
-
-    # Remove existing [colors.*] blocks and append new palette
-    if grep -q '\[colors' "$ALACRITTY_CONF"; then
-        python3 -c "
-import re, sys
-content = open('$ALACRITTY_CONF').read()
-content = re.sub(r'\n\[colors[^\[]*', '', content, flags=re.DOTALL)
-content = re.sub(r'\n{3,}', '\n\n', content).rstrip()
-open('$ALACRITTY_CONF', 'w').write(content + '\n')
-" 2>/dev/null || true
-    fi
-    cat /tmp/alacritty-colors.toml >> "$ALACRITTY_CONF"
+    local theme_slug="$1"
+    local src="$HOME/.config/alacritty/themes/${theme_slug}.toml"
+    local dst="$HOME/.config/alacritty/themes/current-theme.toml"
+    [ -f "$src" ] && cp "$src" "$dst"
 }
 
 # ── GTK theme ────────────────────────────────────────────────────────────────
@@ -273,14 +175,82 @@ apply_wallpaper_theme() {
     done
     [ -z "$wallpaper" ] && return
 
-    pkill swaybg 2>/dev/null || true
-    sleep 0.2
-    swaybg -i "$wallpaper" -m fill &
-    disown
+    swaymsg "output '*' bg $wallpaper fill" 2>/dev/null || \
+        { pkill swaybg 2>/dev/null; sleep 0.2; swaybg -i "$wallpaper" -m fill & disown; }
 
-    if [ -f "$AUTOSTART_CONF" ]; then
-        sed -i "s|exec-once = swaybg.*|exec-once = swaybg -i $wallpaper -m fill|" "$AUTOSTART_CONF"
+    if [ -f "$SWAY_CONF" ]; then
+        sed -i "s|output \* bg .*|output * bg $wallpaper fill|" "$SWAY_CONF"
     fi
+}
+
+# ── Mako notification colors ─────────────────────────────────────────────────
+apply_mako_theme() {
+    local theme="$1"
+    local mako_conf="$HOME/.config/mako/config"
+    [ -d "$(dirname "$mako_conf")" ] || return
+
+    local bg text border border_low border_normal border_high bg_high
+    case "$theme" in
+        "Catppuccin Mocha")
+            bg="#1e1e2e"; text="#cdd6f4"; border="#89b4fa"
+            border_low="#a6e3a1"; border_normal="#89b4fa"; border_high="#f38ba8"; bg_high="#45085a" ;;
+        "Tokyo Night")
+            bg="#1a1b26"; text="#a9b1d6"; border="#7aa2f7"
+            border_low="#9ece6a"; border_normal="#7aa2f7"; border_high="#f7768e"; bg_high="#24283b" ;;
+        "Gruvbox Dark")
+            bg="#282828"; text="#ebdbb2"; border="#d79921"
+            border_low="#98971a"; border_normal="#458588"; border_high="#cc241d"; bg_high="#3c3836" ;;
+        "Nord")
+            bg="#2e3440"; text="#d8dee9"; border="#5e81ac"
+            border_low="#a3be8c"; border_normal="#5e81ac"; border_high="#bf616a"; bg_high="#3b4252" ;;
+        "Rose Pine")
+            bg="#191724"; text="#e0def4"; border="#c4a7e7"
+            border_low="#31748f"; border_normal="#9ccfd8"; border_high="#eb6f92"; bg_high="#26233a" ;;
+        *) return ;;
+    esac
+
+    cat > "$mako_conf" << EOF
+# Mako notification daemon configuration
+# Managed by theme-picker.sh — do not edit colors manually
+
+default-timeout=5000
+ignore-timeout=0
+
+max-visible=5
+sort=-time
+
+layer=overlay
+anchor=top-right
+margin=10
+padding=10
+border-size=2
+border-radius=8
+font=monospace 11
+width=300
+height=100
+
+background-color=$bg
+text-color=$text
+border-color=$border
+progress-color=over $bg
+
+[urgency=low]
+default-timeout=3000
+border-color=$border_low
+
+[urgency=normal]
+default-timeout=5000
+border-color=$border_normal
+
+[urgency=high]
+default-timeout=0
+border-color=$border_high
+background-color=$bg_high
+EOF
+
+    pkill -x mako 2>/dev/null || true
+    sleep 0.2
+    setsid mako >/dev/null 2>&1 &
 }
 
 # ── Neovim colorscheme (LazyVim format) ──────────────────────────────────────
@@ -348,6 +318,7 @@ apply_sway_theme "$ACTIVE_BORDER" "$INACTIVE_BORDER"
 apply_gtk_theme "$GTK_THEME"
 apply_alacritty_theme "$ALACRITTY_PALETTE"
 apply_waybar_theme "$CHOICE"
+apply_mako_theme "$CHOICE"
 apply_neovim_theme "$CHOICE"
 apply_wallpaper_theme "$CHOICE"
 

@@ -64,5 +64,7 @@ if [ -f /var/run/reboot-required ]; then
     [[ "$do_reboot" =~ ^[Yy]$ ]] && sudo reboot
 fi
 
+pkill -RTMIN+8 waybar 2>/dev/null || true
+
 echo ""
 read -rp "Press Enter to close..."

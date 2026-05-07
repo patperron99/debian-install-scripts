@@ -17,7 +17,7 @@ case "$PROFILE" in
         COLOR="#a6e3a1"
         ;;
     *)
-        ICON="󰛑"
+        ICON="󱐋"
         COLOR="#cdd6f4"
         ;;
 esac

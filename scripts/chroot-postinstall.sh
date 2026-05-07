@@ -109,4 +109,4 @@ echo "  Zen browser:    flatpak install -y flathub app.zen_browser.zen"
 
 section "Postinstall complete"
 echo "Sway configured for user: $USERNAME"
-echo "Reboot and select 'Sway' at the SDDM login screen."
+echo "Reboot — greetd/tuigreet démarrera Sway automatiquement."

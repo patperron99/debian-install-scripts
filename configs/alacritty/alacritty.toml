@@ -38,4 +38,4 @@ bindings = [
 ]
 
 [general]
-import = ["~/.config/alacritty/themes/catppuccin-mocha.toml"]
+import = ["~/.config/alacritty/themes/current-theme.toml"]
