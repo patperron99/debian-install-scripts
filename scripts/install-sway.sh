@@ -76,10 +76,15 @@ declare -a PACKAGES=(
     # Terminal
     "alacritty"
 
+    # Power management
+    "power-profiles-daemon"
+
     # System utilities
     "brightnessctl"
     "playerctl"
     "bluez"
+    "blueman"
+    "pavucontrol"
     "kanshi"
     "swayimg"
     "imagemagick"
@@ -91,8 +96,9 @@ declare -a PACKAGES=(
     "qtwayland5"
     "qt6-wayland"
 
-    # Display manager
-    "sddm"
+    # Display manager (Wayland-native, no X11 deps)
+    "greetd"
+    "tuigreet"
 
     # Base tools
     "git"
@@ -100,6 +106,9 @@ declare -a PACKAGES=(
     "wget"
     "unzip"
     "avahi-daemon"
+
+    # Flatpak (for Zen browser)
+    "flatpak"
 )
 
 echo "Updating package lists..."
@@ -146,8 +155,15 @@ echo ""
 echo "Enabling essential services..."
 systemctl enable iwd
 systemctl enable bluetooth
-systemctl enable sddm
+systemctl enable greetd
 systemctl enable avahi-daemon
+systemctl enable --now power-profiles-daemon
+
+echo ""
+echo "Installing Zen browser via Flatpak..."
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install -y flathub app.zen_browser.zen
+xdg-settings set default-web-browser app.zen_browser.zen.desktop
 
 echo ""
 echo "Setting up Sway configuration directories..."
@@ -170,6 +186,29 @@ EnableIPv6=true
 RoutePriorityOffset=300
 EOF
 echo -e "${GREEN}✓ iwd configured${NC}"
+
+echo ""
+echo "Creating greeter system user..."
+if ! id greeter &>/dev/null; then
+    useradd --system --no-create-home --shell /usr/sbin/nologin greeter
+    usermod -aG video greeter
+    echo -e "${GREEN}✓ greeter user created${NC}"
+else
+    echo -e "${GREEN}✓ greeter user already exists${NC}"
+fi
+
+echo ""
+echo "Configuring greetd..."
+mkdir -p /etc/greetd
+cat << 'EOF' > /etc/greetd/config.toml
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --time --remember --remember-session --sessions /usr/share/wayland-sessions"
+user = "greeter"
+EOF
+echo -e "${GREEN}✓ greetd configured${NC}"
 
 print_summary
 

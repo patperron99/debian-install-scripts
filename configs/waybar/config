@@ -1,8 +1,7 @@
 {
-  "output": "eDP-1",
   "layer": "top",
   "position": "top",
-  "modules-left": ["hyprland/workspaces"],
+  "modules-left": ["sway/workspaces"],
   "modules-center": ["clock"],
   "modules-right": [
     "idle_inhibitor",
@@ -29,11 +28,17 @@
   },
 
 
-  "hyprland/workspaces": {
+  "sway/workspaces": {
     "all-outputs": true,
     "format": "{name}",
     "on-click": "activate",
     "sort-by-number": true
+  },
+
+  "sway/window": {
+    "format": "{}",
+    "max-length": 50,
+    "tooltip": false
   },
 
   "pulseaudio": {
@@ -60,7 +65,8 @@
   "custom/updates": {
     "exec": "~/.local/bin/check-updates.sh",
     "return-type": "json",
-    "interval": 3600,
+    "interval": 1800,
+    "signal": 8,
     "format": "{}",
     "on-click": "alacritty -e ~/.local/bin/update-system.sh",
     "tooltip": true
@@ -163,6 +169,7 @@
     "format-icons": "",
 	  "format-connected": "{icon}",
 	  "format-connected-battery": "{icon}",
+	  "on-click": "blueman-manager",
 	  // "format-device-preference": [ "device1", "device2" ], // preference list deciding the displayed device
 	  "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
 	  "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",
@@ -174,6 +181,7 @@
     "exec": "~/.config/waybar/scripts/power_profile.sh",
     "return-type": "json",
     "interval": 5,
+    "signal": 9,
     "on-click": "~/.config/waybar/scripts/power_menu.sh"
   },
 

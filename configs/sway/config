@@ -8,9 +8,15 @@ set $menu wofi --show drun
 exec systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
 
+# ── Monitors ──────────────────────────────────────────────────────────────────
+set $primarymonitor eDP-1
+# TODO: replace with your actual secondary monitor name (run: swaymsg -t get_outputs | grep name)
+set $secondarymonitor HDMI-A-1
+
+include ~/.config/sway/workspaces.conf
+
 # ── Output (monitors) ─────────────────────────────────────────────────────────
 # Auto-detect; override with kanshi profiles (~/.config/kanshi/config)
-output * bg /home/$USER/Pictures/Wallpapers/northern-lights.jpg fill
 
 # ── Input ─────────────────────────────────────────────────────────────────────
 input "type:keyboard" {
@@ -36,16 +42,16 @@ gaps outer 10
 default_border pixel 2
 default_floating_border pixel 2
 
-client.focused          #c4a7e7 #c4a7e7 #ffffff #c4a7e7 #c4a7e7
-client.unfocused        #403d52 #403d52 #888888 #403d52 #403d52
-client.focused_inactive #403d52 #403d52 #888888 #403d52 #403d52
+client.focused          #d79921 #d79921 #ffffff #d79921 #d79921
+client.unfocused        #504945 #504945 #888888 #504945 #504945
+client.focused_inactive #504945 #504945 #888888 #504945 #504945
 
 font pango:JetBrains Mono 10
 
 # ── Autostart ─────────────────────────────────────────────────────────────────
 exec waybar
 exec mako
-exec /usr/lib/polkit-kde-authentication-agent-1
+exec /usr/lib/x86_64-linux-gnu/libexec/polkit-kde-authentication-agent-1
 exec kanshi
 exec wl-paste --type text --watch cliphist store
 exec wl-paste --type image --watch cliphist store
@@ -63,7 +69,7 @@ for_window [app_id="org.gnome.Calculator"] floating enable
 for_window [app_id="org.gnome.DiskUtility"] floating enable
 for_window [app_id="pavucontrol"] floating enable
 for_window [app_id="blueman-manager"] floating enable
-for_window [app_id="Alacritty"] opacity 0.90
+for_window [app_id="Alacritty"] opacity 0.97
 for_window [app_id="org.gnome.Nautilus"] opacity 0.95
 
 # ── Keybindings ───────────────────────────────────────────────────────────────
@@ -72,18 +78,17 @@ for_window [app_id="org.gnome.Nautilus"] opacity 0.95
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+e exec nautilus
-bindsym $mod+b exec blueman-manager
+bindsym $mod+b exec flatpak run app.zen_browser.zen
 bindsym $mod+shift+a exec pavucontrol
 
 # Window management
 bindsym $mod+q kill
 bindsym $mod+f fullscreen toggle
 bindsym $mod+v floating toggle
-bindsym $mod+shift+e exit
+bindsym $mod+Shift+e exit
 
 # Layout
 bindsym $mod+j layout toggle split
-bindsym $mod+p split toggle
 
 # Focus
 bindsym $mod+Left  focus left
@@ -133,19 +138,22 @@ bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+ctrl+minus  scratchpad show
 
 # Lock / power
-bindsym $mod+l       exec swaylock
-bindsym $mod+Shift+p exec bash ~/.local/bin/powermenu.sh
+bindsym $mod+l      exec swaylock
+bindsym $mod+Escape exec bash ~/.local/bin/powermenu.sh
 
 # Clipboard history
 bindsym $mod+c exec cliphist list | wofi --dmenu | cliphist decode | wl-copy
+
+# Reload config
+bindsym $mod+Shift+c reload
 
 # Screen recording
 bindsym $mod+Shift+r exec pkill wf-recorder || wf-recorder -f ~/Videos/recording-$(date +%Y%m%d-%H%M%S).mp4
 
 # Screenshot
-bindsym Print       exec grim -g "$(slurp)" - | wl-copy
-bindsym Shift+Print exec grim - | wl-copy
-bindsym $mod+Print  exec grim ~/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png
+bindsym $mod+p       exec grim -g "$(slurp)" - | wl-copy
+bindsym $mod+Shift+p exec grim - | wl-copy
+bindsym $mod+ctrl+p  exec grim ~/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png
 
 # Wallpaper cycle
 bindsym $mod+w exec bash ~/.local/bin/wallpaper-next.sh
@@ -171,4 +179,10 @@ floating_modifier $mod normal
 # ── Drag & drop ───────────────────────────────────────────────────────────────
 seat seat0 hide_cursor 3000
 
-include /etc/sway/config.d/*
+seat seat0 xcursor_theme Adwaita 24
+
+include /etc/sway/config.d/*.conf
+output * bg #282828 solid_color
+
+exec xsettingsd
+exec_always autotiling

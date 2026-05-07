@@ -11,4 +11,5 @@ CHOICE=$(printf '󱐋  performance\n󰓡  balanced\n󰾅  power-saver' | \
 
 PROFILE=$(echo "$CHOICE" | awk '{print $NF}')
 powerprofilesctl set "$PROFILE" && \
-    notify-send "Power Profile" "Switched to $PROFILE"
+    notify-send "Power Profile" "Switched to $PROFILE" && \
+    pkill -RTMIN+9 waybar

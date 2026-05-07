@@ -74,6 +74,9 @@ declare -a AVAILABLE_PACKAGES=(
     # Terminal emulators
     "alacritty"
 
+    # Power management
+    "power-profiles-daemon"
+
     # System utilities
     "brightnessctl"
     "playerctl"
@@ -111,6 +114,9 @@ declare -a AVAILABLE_PACKAGES=(
 
     # Lightweight image viewer
     "swayimg"
+
+    # Flatpak (for Zen browser)
+    "flatpak"
 )
 
 # Packages from Debian Sid (unstable) — added automatically if not in current repos
@@ -216,6 +222,13 @@ systemctl enable iwd
 systemctl enable bluetooth
 systemctl enable sddm
 systemctl enable avahi-daemon
+systemctl enable --now power-profiles-daemon
+
+echo ""
+echo "Installing Zen browser via Flatpak..."
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install -y flathub app.zen_browser.zen
+xdg-settings set default-web-browser app.zen_browser.zen.desktop
 
 echo ""
 echo "Setting up Hyprland configuration directories..."
