@@ -17,6 +17,7 @@ alias reload='source ~/.bashrc'
 alias ff="fastfetch"
 alias v=tmux_nvim
 alias kick=tmux_ssh
+alias vssh='nvim ~/.ssh/config'
 
 # Git
 alias gp="git push -u origin main"
@@ -32,6 +33,20 @@ export PATH="$HOME/.local/bin:$HOME/scripts:$PATH"
 export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"
 export VISUAL=nvim
 export EDITOR=nvim
+export HISTCONTROL=ignorespace
+
+# Rust/Cargo
+[[ -f "$HOME/.cargo/env" ]] && . "$HOME/.cargo/env"
+
+# Node.js global packages
+[[ -d "$HOME/.npm-global/bin" ]] && export PATH="$HOME/.npm-global/bin:$PATH"
+
+# Python version manager
+if [[ -d "$HOME/.pyenv" ]]; then
+    export PYENV_ROOT="$HOME/.pyenv"
+    [[ -d "$PYENV_ROOT/bin" ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init -)"
+fi
 
 # ─── PROMPT ───────────────────────────────────────────────────────────────────
 _t=$(cat "$HOME/.local/share/current-theme" 2>/dev/null || echo "gruvbox")
@@ -141,10 +156,34 @@ PROMPT_COMMAND=set_prompt
 
 # ─── TMUX HELPERS ─────────────────────────────────────────────────────────────
 tmux_ssh() {
-    local tab_name="${1:-$(basename "$(pwd)")}"
+    local host="$1"
+
+    if [[ -z "$host" ]]; then
+        local ssh_hosts
+        ssh_hosts=$(grep "^Host " ~/.ssh/config 2>/dev/null | \
+            awk '{print $2}' | grep -v '[*?]' | sort -u)
+
+        if [[ -z "$ssh_hosts" ]]; then
+            echo "No hosts found. Enter host/IP:"
+            read -r host
+        else
+            host=$(echo "$ssh_hosts" | fzf \
+                --prompt="SSH → " \
+                --header="↑↓: navigate | Enter: connect | Ctrl-/: preview | Esc: cancel" \
+                --border=rounded \
+                --preview='grep -A 15 "^Host {}" ~/.ssh/config 2>/dev/null | sed "s/^/  /" || echo "  No config found"' \
+                --preview-window=right:50%:wrap:border-left \
+                --bind='ctrl-/:toggle-preview')
+        fi
+
+        [[ -z "$host" ]] && return 1
+    fi
+
+    local tab_name
+    tab_name=$(basename "$host")
     local session="ssh-session"
     tmux has-session -t "$session" 2>/dev/null || tmux new-session -d -s "$session"
-    tmux new-window -t "$session" -n "$tab_name" "ssh $1"
+    tmux new-window -t "$session" -n "$tab_name" "ssh $host"
     tmux attach-session -t "$session"
 }
 

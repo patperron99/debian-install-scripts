@@ -127,8 +127,31 @@ echo -e "${GREEN}Installed: ~/.config/kitty/${NC}"
 echo ""
 echo "Installing Tmux configuration..."
 mkdir -p "$HOME/.config/tmux"
-cp "$CONFIGS_DIR/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
-echo -e "${GREEN}Installed: ~/.config/tmux/tmux.conf${NC}"
+cp "$CONFIGS_DIR/tmux/tmux.conf"   "$HOME/.config/tmux/tmux.conf"
+cp "$CONFIGS_DIR/tmux/theme.conf"  "$HOME/.config/tmux/theme.conf"
+cp "$CONFIGS_DIR/tmux/theme.tmpl"  "$HOME/.config/tmux/theme.tmpl"
+echo -e "${GREEN}Installed: ~/.config/tmux/${NC}"
+
+# Install theme variable files
+echo ""
+echo "Installing theme variable files..."
+mkdir -p "$HOME/.config/themes"
+cp "$CONFIGS_DIR/themes/"*.sh "$HOME/.config/themes/"
+echo -e "${GREEN}Installed: ~/.config/themes/${NC}"
+
+# Install config templates (used by theme-picker.sh via envsubst)
+echo ""
+echo "Installing config templates..."
+cp "$CONFIGS_DIR/waybar/colors.tmpl" "$HOME/.config/waybar/colors.tmpl"
+cp "$CONFIGS_DIR/mako/config.tmpl"   "$HOME/.config/mako/config.tmpl"
+echo -e "${GREEN}Installed: colors.tmpl, config.tmpl${NC}"
+
+# Install TPM if absent and bootstrap plugins
+if [ ! -d "$HOME/.config/tmux/plugins/tpm" ]; then
+    git clone https://github.com/tmux-plugins/tpm "$HOME/.config/tmux/plugins/tpm"
+fi
+"$HOME/.config/tmux/plugins/tpm/bin/install_plugins" 2>/dev/null || true
+echo -e "${GREEN}✓ tmux plugins installed${NC}"
 
 # Install .bashrc
 echo ""
@@ -189,7 +212,8 @@ echo "  - ~/.config/waybar/            (status bar)"
 echo "  - ~/.config/wofi/              (app launcher)"
 echo "  - ~/.config/alacritty/         (terminal)"
 echo "  - ~/.config/kitty/             (terminal)"
-echo "  - ~/.config/tmux/              (multiplexer)"
+echo "  - ~/.config/tmux/              (multiplexer + theme.tmpl)"
+echo "  - ~/.config/themes/            (per-theme color variables)"
 echo "  - ~/.bashrc / ~/.bash_profile  (shell config)"
 echo "  - ~/.local/bin/                (helper scripts)"
 echo ""

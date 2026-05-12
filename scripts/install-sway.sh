@@ -101,6 +101,7 @@ declare -a PACKAGES=(
   "curl"
   "wget"
   "unzip"
+  "fzf"
   "avahi-daemon"
   "python3-pipx"
 

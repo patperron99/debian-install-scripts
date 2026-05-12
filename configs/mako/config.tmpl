@@ -1,0 +1,36 @@
+# Mako notification daemon configuration
+# AUTO-GENERATED — edit configs/mako/config.tmpl or configs/themes/<slug>.sh
+
+default-timeout=5000
+ignore-timeout=0
+
+max-visible=5
+sort=-time
+
+layer=overlay
+anchor=top-right
+margin=10
+padding=10
+border-size=2
+border-radius=8
+font=monospace 11
+width=300
+height=100
+
+background-color=$BG
+text-color=$FG
+border-color=$ACCENT
+progress-color=over $BG
+
+[urgency=low]
+default-timeout=3000
+border-color=$MAKO_BORDER_LOW
+
+[urgency=normal]
+default-timeout=5000
+border-color=$MAKO_BORDER_NORMAL
+
+[urgency=high]
+default-timeout=0
+border-color=$MAKO_BORDER_HIGH
+background-color=$MAKO_BG_HIGH

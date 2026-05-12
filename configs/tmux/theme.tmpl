@@ -1,0 +1,25 @@
+# AUTO-GENERATED — edit configs/tmux/theme.tmpl (format) or configs/themes/<slug>.sh (colors)
+
+set -g status-style          "bg=$BG,fg=$FG"
+set -g status-left-length    40
+set -g status-right-length   60
+
+# Left: [session] in accent box, filled arrow out
+set -g status-left \
+  "#[fg=$ACCENT_FG,bg=$ACCENT,bold] [#S] #[fg=$ACCENT,bg=$BG,nobold] "
+
+# Right: date ❮ time ◀ [hostname]
+set -g status-right \
+  "#[fg=$FG_DIM,bg=$BG] %Y-%m-%d #[fg=$SEP_COLOR]#[fg=$FG,bg=$BG] %H:%M #[fg=$ACCENT,bg=$BG]#[fg=$ACCENT_FG,bg=$ACCENT,bold] [#h] "
+
+# Window list: thin arrow between index and name, empty separator
+# Active window: accent-colored box with filled arrows
+setw -g window-status-style          "fg=$FG_DIM,bg=$BG"
+setw -g window-status-format         " #[fg=$FG_DIM] #I#[fg=$SEP_COLOR]#[fg=$FG_DIM] #W#F "
+setw -g window-status-current-format "#[fg=$ACCENT_FG,bg=$ACCENT,bold] #I#[fg=$ACCENT_FG,bg=$ACCENT]#[fg=$ACCENT_FG] #W#F #[fg=$ACCENT,bg=$BG,nobold] "
+setw -g window-status-separator      ""
+
+set -g pane-border-style        "fg=$SEP_COLOR"
+set -g pane-active-border-style "fg=$ACCENT"
+set -g message-style            "fg=$ACCENT_FG,bg=$ACCENT,bold"
+set -g message-command-style    "fg=$FG,bg=$SEP_COLOR"
