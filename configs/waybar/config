@@ -72,10 +72,11 @@
 
   "custom/vpn": {
     "format": "{}",
+    "return-type": "json",
     "interval": 5,
     "exec": "~/.config/waybar/scripts/vpn_status.sh",
-    "on-click": "~/.config/waybar/scripts/vpn_menu.sh",
-    "tooltip": "vpn"
+    "on-click": "alacritty -e pritunl-client",
+    "tooltip": true
   },
 
   "cpu": {

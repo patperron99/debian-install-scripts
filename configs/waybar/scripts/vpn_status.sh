@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# Get name of active VPN connection
-VPN_NAME=$(nmcli --terse --fields NAME,TYPE connection show --active | grep vpn | cut -d: -f1)
+LINE=$(pritunl-client list 2>/dev/null | awk -F'|' '/Active/ {print}' | head -1)
 
-if [ -n "$VPN_NAME" ]; then
-  echo "󱇱 $VPN_NAME"
+if [ -n "$LINE" ]; then
+    NAME=$(echo "$LINE"   | awk -F'|' '{gsub(/^ +| +$/, "", $3); print $3}')
+    UPTIME=$(echo "$LINE" | awk -F'|' '{gsub(/^ +| +$/, "", $6); print $6}')
+    SERVER=$(echo "$LINE" | awk -F'|' '{gsub(/^ +| +$/, "", $7); print $7}')
+    CLIENT=$(echo "$LINE" | awk -F'|' '{gsub(/^ +| +$/, "", $8); print $8}')
+    printf '{"text":"󱇱","tooltip":"%s\\n%s → %s\\nUptime: %s","class":"connected"}\n' \
+        "$NAME" "$SERVER" "$CLIENT" "$UPTIME"
 else
-  echo " "
+    printf '{"text":" ","tooltip":"VPN disconnected","class":"disconnected"}\n'
 fi
