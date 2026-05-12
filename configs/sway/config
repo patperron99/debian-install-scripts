@@ -56,9 +56,11 @@ exec kanshi
 exec wl-paste --type text --watch cliphist store
 exec wl-paste --type image --watch cliphist store
 exec swayidle -w \
+    timeout 120  'bash ~/.local/bin/screensaver-launch.sh' \
+        resume   'bash ~/.local/bin/screensaver-stop.sh' \
     timeout 300  'brightnessctl -s set 10%' \
         resume   'brightnessctl -r' \
-    timeout 600  'hyprlock' \
+    timeout 600  'bash ~/.local/bin/screensaver-stop.sh; hyprlock' \
     timeout 900  'swaymsg "output * dpms off"' \
         resume   'swaymsg "output * dpms on"' \
     timeout 1800 'systemctl suspend' \
@@ -71,6 +73,7 @@ for_window [app_id="pavucontrol"] floating enable
 for_window [app_id="blueman-manager"] floating enable
 for_window [app_id="Alacritty"] opacity 0.97
 for_window [app_id="org.gnome.Nautilus"] opacity 0.95
+for_window [app_id="screensaver"] fullscreen enable, border none
 
 # ── Keybindings ───────────────────────────────────────────────────────────────
 
@@ -137,8 +140,9 @@ bindsym $mod+button5 workspace next
 bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+ctrl+minus  scratchpad show
 
-# Lock / power
-bindsym $mod+l      exec hyprlock
+# Lock / screensaver / power
+bindsym $mod+l         exec hyprlock
+bindsym $mod+Shift+l   exec bash ~/.local/bin/screensaver-launch.sh
 bindsym $mod+Escape exec bash ~/.local/bin/powermenu.sh
 
 # Clipboard history
@@ -176,10 +180,10 @@ bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
 # Mouse drag
 floating_modifier $mod normal
 
-# ── Drag & drop ───────────────────────────────────────────────────────────────
+# ── Cursor ────────────────────────────────────────────────────────────────────
 seat seat0 hide_cursor 3000
-
 seat seat0 xcursor_theme Adwaita 24
+mouse_warping container
 
 include /etc/sway/config.d/*.conf
 output * bg #282828 solid_color

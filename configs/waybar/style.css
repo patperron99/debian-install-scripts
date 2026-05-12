@@ -1,17 +1,16 @@
 @import "colors.css";
 
 * {
-  font-family: "FiraCode Nerd Font", FontAwesome;
-  font-size: 15px;
+  font-family: "JetBrains Mono", "Noto Sans", monospace;
+  font-size: 14px;
   border: none;
   border-radius: 0;
   padding: 2px 5px;
 }
 
 #waybar {
-  background: rgba(0, 0, 0, 0.9);
-  border-radius: 4px;
-  margin: 8px;
+  background: @bg;
+  border-radius: 0;
   padding: 2px;
   color: @fg_bright;
 }
@@ -34,6 +33,12 @@
   background: transparent;
   color: @fg;
   border-radius: 4px;
+}
+
+#workspaces button.focused {
+  background-color: @ws_active_bg;
+  color: @ws_active_fg;
+  border: 1px solid @ws_active_border;
 }
 
 #workspaces button.active {
@@ -76,4 +81,14 @@
 #custom-updates.updates-available {
   color: @updates_avail;
   border-color: @updates_avail;
+}
+
+#battery.warning {
+  color: #d79921;
+  border-color: #d79921;
+}
+
+#battery.critical {
+  color: @urgent;
+  border-color: @urgent;
 }

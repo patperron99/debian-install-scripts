@@ -29,6 +29,20 @@ fi
 xdg-user-dirs-update 2>/dev/null || true
 mkdir -p "$HOME/Pictures/Wallpapers" "$HOME/Pictures/Screenshots" "$HOME/Videos"
 
+echo ""
+echo "Installing wallpapers..."
+for theme_dir in "$CONFIGS_DIR/wallpapers/"/*/; do
+    slug=$(basename "$theme_dir")
+    mkdir -p "$HOME/Pictures/Wallpapers/$slug"
+    find "$theme_dir" -maxdepth 1 -type f \
+        \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) \
+        -exec cp {} "$HOME/Pictures/Wallpapers/$slug/" \;
+    echo -e "${GREEN}Installed: ~/Pictures/Wallpapers/$slug/${NC}"
+done
+
+mkdir -p "$HOME/.local/share"
+[ -f "$HOME/.local/share/current-theme" ] || echo "gruvbox" > "$HOME/.local/share/current-theme"
+
 # Backup existing sway config
 echo ""
 echo "Backing up existing configuration files..."
@@ -66,6 +80,13 @@ echo "Installing Kanshi multi-monitor configuration..."
 mkdir -p "$HOME/.config/kanshi"
 cp "$CONFIGS_DIR/kanshi/config" "$HOME/.config/kanshi/config"
 echo -e "${GREEN}Installed: ~/.config/kanshi/config${NC}"
+
+# Install screensaver config
+echo ""
+echo "Installing screensaver configuration..."
+mkdir -p "$HOME/.config/screensaver"
+cp "$CONFIGS_DIR/screensaver/content.txt" "$HOME/.config/screensaver/content.txt"
+echo -e "${GREEN}Installed: ~/.config/screensaver/content.txt${NC}"
 
 # Install waybar config
 echo ""
@@ -146,7 +167,7 @@ fi
 echo ""
 echo "Installing helper scripts to ~/.local/bin/..."
 mkdir -p "$HOME/.local/bin"
-for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh; do
+for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh screensaver-launch.sh screensaver-stop.sh screensaver-tte.sh; do
     if [ -f "$SCRIPTS_DIR/$helper" ]; then
         cp "$SCRIPTS_DIR/$helper" "$HOME/.local/bin/$helper"
         chmod +x "$HOME/.local/bin/$helper"

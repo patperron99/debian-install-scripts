@@ -33,16 +33,66 @@ export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"
 export VISUAL=nvim
 export EDITOR=nvim
 
-# ─── NORD PROMPT ──────────────────────────────────────────────────────────────
-FROST_2='\[\e[38;2;129;161;193m\]'
-FROST_3='\[\e[38;2;94;129;172m\]'
-SNOW_STORM_2='\[\e[38;2;236;239;244m\]'
-AURORA_RED='\[\e[38;2;211;134;155m\]'
-AURORA_ORANGE='\[\e[38;2;235;137;91m\]'
-AURORA_YELLOW='\[\e[38;2;235;174;97m\]'
-AURORA_GREEN='\[\e[38;2;197;232;178m\]'
-AURORA_PURPLE='\[\e[38;2;191;97;106m\]'
-AURORA_BLUE='\[\e[38;2;116;185;255m\]'
+# ─── PROMPT ───────────────────────────────────────────────────────────────────
+_t=$(cat "$HOME/.local/share/current-theme" 2>/dev/null || echo "gruvbox")
+case "$_t" in
+  catppuccin-mocha)
+    _PC_BORDER='\[\e[38;2;137;180;250m\]'   # blue
+    _PC_USER='\[\e[38;2;203;166;247m\]'     # mauve
+    _PC_HOST='\[\e[38;2;137;180;250m\]'     # blue
+    _PC_AT='\[\e[38;2;205;214;244m\]'       # text
+    _PC_PATH='\[\e[38;2;166;227;161m\]'     # green
+    _PC_GIT='\[\e[38;2;250;179;135m\]'      # peach
+    _PC_VENV='\[\e[38;2;249;226;175m\]'     # yellow
+    _PC_ERROR='\[\e[38;2;243;139;168m\]'    # red
+    _PC_OK='\[\e[38;2;166;227;161m\]'       # green
+    ;;
+  tokyo-night)
+    _PC_BORDER='\[\e[38;2;122;162;247m\]'   # blue
+    _PC_USER='\[\e[38;2;187;154;247m\]'     # purple
+    _PC_HOST='\[\e[38;2;122;162;247m\]'     # blue
+    _PC_AT='\[\e[38;2;192;202;245m\]'       # text
+    _PC_PATH='\[\e[38;2;158;206;106m\]'     # green
+    _PC_GIT='\[\e[38;2;255;158;100m\]'      # orange
+    _PC_VENV='\[\e[38;2;224;175;104m\]'     # yellow
+    _PC_ERROR='\[\e[38;2;247;118;142m\]'    # red
+    _PC_OK='\[\e[38;2;158;206;106m\]'       # green
+    ;;
+  nord)
+    _PC_BORDER='\[\e[38;2;129;161;193m\]'   # frost2
+    _PC_USER='\[\e[38;2;191;97;106m\]'      # aurora red
+    _PC_HOST='\[\e[38;2;94;129;172m\]'      # frost3
+    _PC_AT='\[\e[38;2;236;239;244m\]'       # snow storm
+    _PC_PATH='\[\e[38;2;163;190;140m\]'     # aurora green
+    _PC_GIT='\[\e[38;2;208;135;112m\]'      # aurora orange
+    _PC_VENV='\[\e[38;2;235;203;139m\]'     # aurora yellow
+    _PC_ERROR='\[\e[38;2;191;97;106m\]'     # aurora red
+    _PC_OK='\[\e[38;2;163;190;140m\]'       # aurora green
+    ;;
+  rose-pine)
+    _PC_BORDER='\[\e[38;2;156;207;216m\]'   # foam
+    _PC_USER='\[\e[38;2;196;167;231m\]'     # iris
+    _PC_HOST='\[\e[38;2;156;207;216m\]'     # foam
+    _PC_AT='\[\e[38;2;224;222;244m\]'       # text
+    _PC_PATH='\[\e[38;2;235;188;186m\]'     # rose
+    _PC_GIT='\[\e[38;2;246;193;119m\]'      # gold
+    _PC_VENV='\[\e[38;2;246;193;119m\]'     # gold
+    _PC_ERROR='\[\e[38;2;235;111;146m\]'    # love
+    _PC_OK='\[\e[38;2;156;207;216m\]'       # foam
+    ;;
+  *)  # gruvbox (default)
+    _PC_BORDER='\[\e[38;2;69;133;136m\]'    # aqua
+    _PC_USER='\[\e[38;2;250;189;47m\]'      # yellow bright
+    _PC_HOST='\[\e[38;2;131;165;152m\]'     # aqua bright
+    _PC_AT='\[\e[38;2;235;219;178m\]'       # fg
+    _PC_PATH='\[\e[38;2;184;187;38m\]'      # green bright
+    _PC_GIT='\[\e[38;2;254;128;25m\]'       # orange bright
+    _PC_VENV='\[\e[38;2;250;189;47m\]'      # yellow bright
+    _PC_ERROR='\[\e[38;2;251;73;52m\]'      # red bright
+    _PC_OK='\[\e[38;2;184;187;38m\]'        # green bright
+    ;;
+esac
+unset _t
 RESET='\[\e[0m\]'
 
 SEPARATOR=""
@@ -62,29 +112,29 @@ get_virtual_env() {
 set_prompt() {
     local EXIT="$?"
 
-    PS1="\n${AURORA_BLUE}┌─${RESET}"
-    PS1+="${AURORA_PURPLE}\u${SNOW_STORM_2}@${FROST_2}\h${RESET}"
-    PS1+="${AURORA_BLUE} ${SEPARATOR}${RESET}"
-    PS1+="${AURORA_GREEN} \w${RESET}"
+    PS1="\n${_PC_BORDER}┌─${RESET}"
+    PS1+="${_PC_USER}\u${_PC_AT}@${_PC_HOST}\h${RESET}"
+    PS1+="${_PC_BORDER} ${SEPARATOR}${RESET}"
+    PS1+="${_PC_PATH} \w${RESET}"
 
     if git rev-parse --git-dir >/dev/null 2>&1; then
-        PS1+="${AURORA_BLUE} ${SEPARATOR}${RESET}"
-        PS1+="${AURORA_ORANGE} ${BRANCH} $(parse_git_branch)${RESET}"
+        PS1+="${_PC_BORDER} ${SEPARATOR}${RESET}"
+        PS1+="${_PC_GIT} ${BRANCH} $(parse_git_branch)${RESET}"
     fi
 
     if [[ -n "$(get_virtual_env)" ]]; then
-        PS1+="${AURORA_BLUE} ${SEPARATOR}${RESET}"
-        PS1+="${AURORA_YELLOW} ${PYTHON} $(get_virtual_env)${RESET}"
+        PS1+="${_PC_BORDER} ${SEPARATOR}${RESET}"
+        PS1+="${_PC_VENV} ${PYTHON} $(get_virtual_env)${RESET}"
     fi
 
-    PS1+="${AURORA_BLUE} ${SEPARATOR}${RESET}"
+    PS1+="${_PC_BORDER} ${SEPARATOR}${RESET}"
     if [[ $EXIT != 0 ]]; then
-        PS1+="${AURORA_RED} ${ERROR} ${EXIT}${RESET}"
+        PS1+="${_PC_ERROR} ${ERROR} ${EXIT}${RESET}"
     else
-        PS1+="${AURORA_GREEN} ${OK}${RESET}"
+        PS1+="${_PC_OK} ${OK}${RESET}"
     fi
 
-    PS1+="\n${AURORA_BLUE}└─❯${RESET} "
+    PS1+="\n${_PC_BORDER}└─❯${RESET} "
 }
 
 PROMPT_COMMAND=set_prompt
