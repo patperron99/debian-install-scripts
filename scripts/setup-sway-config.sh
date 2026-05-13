@@ -153,6 +153,13 @@ fi
 "$HOME/.config/tmux/plugins/tpm/bin/install_plugins" 2>/dev/null || true
 echo -e "${GREEN}✓ tmux plugins installed${NC}"
 
+# Install .desktop files (web apps)
+echo ""
+echo "Installing desktop entries..."
+mkdir -p "$HOME/.local/share/applications"
+cp "$CONFIGS_DIR/applications/"*.desktop "$HOME/.local/share/applications/"
+echo -e "${GREEN}Installed: ~/.local/share/applications/${NC}"
+
 # Install .bashrc
 echo ""
 echo "Installing .bashrc..."

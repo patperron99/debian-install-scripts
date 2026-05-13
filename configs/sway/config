@@ -83,6 +83,7 @@ bindsym $mod+d exec $menu
 bindsym $mod+e exec nautilus
 bindsym $mod+b exec flatpak run app.zen_browser.zen
 bindsym $mod+shift+a exec pavucontrol
+bindsym $mod+Shift+s exec chromium --app=https://app.slack.com/client --class=Slack
 
 # Window management
 bindsym $mod+q kill

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Slack
+Comment=Slack Web App
+Exec=chromium --app=https://app.slack.com/client --class=Slack
+Icon=slack
+Type=Application
+Categories=Network;InstantMessaging;
+StartupWMClass=Slack
