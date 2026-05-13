@@ -3,6 +3,9 @@
 CLAUDE.md
 .claude.json
 
+# Local install configuration (machine-specific, may contain passwords)
+install.conf
+
 # Log files
 *.log
 /var/log/

@@ -1,0 +1,37 @@
+# install.conf — Configuration d'installation Debian Sway
+# Copier ce fichier en 'install.conf' et l'adapter avant de lancer debian-install-fresh.sh
+# install.conf est dans .gitignore — ne pas le committer s'il contient des mots de passe.
+
+# ── Disque ────────────────────────────────────────────────────────────────────
+# Disque cible (ex: /dev/nvme0n1, /dev/sda, /dev/vda)
+# Laisser vide pour afficher le menu interactif de sélection.
+INSTALL_DISK=
+
+# ── Filesystem ────────────────────────────────────────────────────────────────
+# Système de fichiers root : btrfs | ext4 | xfs
+INSTALL_FS=btrfs
+
+# ── Chiffrement LUKS ──────────────────────────────────────────────────────────
+# Chiffrer la partition root : yes | no
+INSTALL_LUKS=yes
+
+# ── Réseau ────────────────────────────────────────────────────────────────────
+# Copier les profils NetworkManager du LiveCD : yes | no | (vide = demander)
+INSTALL_COPY_WIFI=
+
+# ── Debian release ────────────────────────────────────────────────────────────
+# stable | testing | bookworm | trixie | etc.
+INSTALL_RELEASE=stable
+
+# ── Système ───────────────────────────────────────────────────────────────────
+INSTALL_HOSTNAME=debian
+INSTALL_USERNAME=user
+INSTALL_LOCALE=fr_FR.UTF-8
+INSTALL_TIMEZONE=America/Montreal
+
+# ── Mots de passe ─────────────────────────────────────────────────────────────
+# Laisser vide pour être demandé de façon interactive (recommandé).
+# ATTENTION : si renseignés, ne pas committer install.conf.
+INSTALL_LUKS_PASS=
+INSTALL_ROOT_PASS=
+INSTALL_USER_PASS=

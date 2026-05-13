@@ -2,7 +2,17 @@
 
 RELEASE=$1
 
-# Set up apt sources
+# Load install.conf and injected secrets (written by debian-install-fresh.sh)
+[ -f /opt/debian-install-scripts/install.conf ] && source /opt/debian-install-scripts/install.conf
+[ -f /tmp/.install-secrets ]                    && source /tmp/.install-secrets
+
+# Defaults for any variable not set via install.conf
+INSTALL_LOCALE="${INSTALL_LOCALE:-fr_FR.UTF-8}"
+INSTALL_TIMEZONE="${INSTALL_TIMEZONE:-America/Montreal}"
+INSTALL_HOSTNAME="${INSTALL_HOSTNAME:-debian-strap}"
+INSTALL_USERNAME="${INSTALL_USERNAME:-user}"
+
+# ── APT sources ───────────────────────────────────────────────────────────────
 cat > /etc/apt/sources.list << EOF
 deb http://deb.debian.org/debian $RELEASE main contrib non-free non-free-firmware
 deb-src http://deb.debian.org/debian $RELEASE main contrib non-free non-free-firmware
@@ -12,48 +22,33 @@ deb http://deb.debian.org/debian $RELEASE-updates main contrib non-free non-free
 deb-src http://deb.debian.org/debian $RELEASE-updates main contrib non-free non-free-firmware
 EOF
 
-# Update and install packages
 apt update
-apt install -y locales
+apt install -y locales tzdata
 
-# Configure locales
-echo "Configuring locales..."
-dpkg-reconfigure locales
+# ── Locale ────────────────────────────────────────────────────────────────────
+echo "Configuring locale: $INSTALL_LOCALE"
+echo "$INSTALL_LOCALE UTF-8" > /etc/locale.gen
+locale-gen
+echo "LANG=$INSTALL_LOCALE" > /etc/default/locale
 
-# Set default locale
-echo "Generating /etc/default/locale..."
-echo "LANG=en_US.UTF-8" > /etc/default/locale
-echo "LANGUAGE=en_US:en" >> /etc/default/locale
+# ── Timezone ──────────────────────────────────────────────────────────────────
+echo "Configuring timezone: $INSTALL_TIMEZONE"
+ln -sf "/usr/share/zoneinfo/$INSTALL_TIMEZONE" /etc/localtime
+hwclock --systohc
 
-# Configure timezone
-dpkg-reconfigure tzdata
+# ── Hostname ──────────────────────────────────────────────────────────────────
+echo "Setting hostname: $INSTALL_HOSTNAME"
+echo "$INSTALL_HOSTNAME" > /etc/hostname
+echo "127.0.1.1 $INSTALL_HOSTNAME.localdomain $INSTALL_HOSTNAME" >> /etc/hosts
 
-# Ask for hostname
-echo "Please enter the hostname for your system:"
-read -r HOSTNAME
-
-# If hostname is empty, set default
-if [ -z "$HOSTNAME" ]; then
-    HOSTNAME=debian-strap
-    echo "No hostname provided, using default: $HOSTNAME"
-else
-    echo "Setting hostname to: $HOSTNAME"
-fi
-
-# Set hostname
-echo $HOSTNAME > /etc/hostname
-echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME" >> /etc/hosts
-
-# Install essential packages
+# ── Essential packages ────────────────────────────────────────────────────────
 apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-linux-nonfree \
     firmware-iwlwifi firmware-realtek \
     sudo vim bash-completion grub-efi-amd64 network-manager btrfs-progs \
     cryptsetup openssh-server git plymouth plymouth-themes wget curl \
     wpasupplicant iw rfkill pciutils usbutils build-essential dkms
 
-# Check if encryption was used
-# In chroot /dev/mapper/cryptroot doesn't exist; detect via /etc/crypttab populated
-# from the host, or detect via the LUKS label on the underlying partition
+# ── LUKS / crypttab ───────────────────────────────────────────────────────────
 if findfs LABEL=Debian 2>/dev/null | xargs -I{} cryptsetup isLuks {} 2>/dev/null; then
     echo "Configuring encrypted system..."
     apt install -y cryptsetup-initramfs
@@ -62,46 +57,46 @@ if findfs LABEL=Debian 2>/dev/null | xargs -I{} cryptsetup isLuks {} 2>/dev/null
     echo "GRUB_ENABLE_CRYPTODISK=y" >> /etc/default/grub
 fi
 
-# Configure GRUB
 echo "GRUB_BACKGROUND=" >> /etc/default/grub
-
-# Configure tmpfs for /tmp
 echo "tmpfs /tmp tmpfs rw,nosuid,nodev 0 0" >> /etc/fstab
 
-# Set root password
-echo "Set root password:"
-passwd
-
-# Ask for user to add
-echo "Please enter the username for the new user:"
-read -r USERNAME
-# If username is empty, set default
-if [ -z "$USERNAME" ]; then
-    USERNAME=user
-    echo "No username provided, using default: $USERNAME"
+# ── Root password ─────────────────────────────────────────────────────────────
+if [ -n "${INSTALL_ROOT_PASS:-}" ]; then
+    echo "root:$INSTALL_ROOT_PASS" | chpasswd
+    echo "Root password set."
 else
-    echo "Setting username to: $USERNAME"
+    echo "Set root password:"
+    passwd
 fi
-# Create user
-useradd $USERNAME -m -c "$USERNAME" -s /bin/bash
-echo "Set $USERNAME password:"
-passwd $USERNAME
-usermod -aG sudo,adm,dialout,cdrom,floppy,audio,dip,video,plugdev,users,netdev $USERNAME
 
-# Run Hyprland postinstall inside the chroot (packages + configs + theme)
+# ── User creation ─────────────────────────────────────────────────────────────
+echo "Creating user: $INSTALL_USERNAME"
+useradd "$INSTALL_USERNAME" -m -c "$INSTALL_USERNAME" -s /bin/bash
+if [ -n "${INSTALL_USER_PASS:-}" ]; then
+    echo "$INSTALL_USERNAME:$INSTALL_USER_PASS" | chpasswd
+    echo "User password set."
+else
+    echo "Set $INSTALL_USERNAME password:"
+    passwd "$INSTALL_USERNAME"
+fi
+usermod -aG sudo,adm,dialout,cdrom,floppy,audio,dip,video,plugdev,users,netdev "$INSTALL_USERNAME"
+
+# ── Sway postinstall ──────────────────────────────────────────────────────────
 REPO_DIR="/opt/debian-install-scripts"
 if [ -d "$REPO_DIR" ]; then
-    bash "$REPO_DIR/scripts/chroot-postinstall.sh" "$USERNAME"
+    bash "$REPO_DIR/scripts/chroot-postinstall.sh" "$INSTALL_USERNAME"
 else
-    echo "[WARN] $REPO_DIR not found — skipping Hyprland postinstall."
-    echo "       Run postinstall-hyprland.sh manually after reboot."
+    echo "[WARN] $REPO_DIR not found — skipping Sway postinstall."
+    echo "       Run postinstall-sway.sh manually after reboot."
 fi
 
-# Update initramfs to include all configurations
+# ── Shred secrets ─────────────────────────────────────────────────────────────
+[ -f /tmp/.install-secrets ] && shred -u /tmp/.install-secrets
+
+# ── Initramfs + GRUB ──────────────────────────────────────────────────────────
 echo "Updating initramfs..."
 update-initramfs -u -k all
 
-# Install and update GRUB
 SELECTED_DISK=$(cat /selected_disk)
 echo "Installing GRUB to $SELECTED_DISK..."
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Debian "$SELECTED_DISK"

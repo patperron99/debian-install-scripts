@@ -28,7 +28,7 @@ bash "$SCRIPTS_DIR/install-sway.sh" "$USERNAME"
 
 # Step 2: Configuration files (user context — runuser sets HOME correctly)
 section "2/6 — Deploy configuration files"
-runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/setup-sway-config.sh'"
+runuser -l "$USERNAME" -c "cd '$REPO_DIR' && NONINTERACTIVE=1 bash '$SCRIPTS_DIR/setup-sway-config.sh'"
 
 # Step 3: Extras — dev tools, nerd fonts, TPM (mixed root/user)
 section "3/6 — Extras (neovim, tmux, fonts, flatpak)"

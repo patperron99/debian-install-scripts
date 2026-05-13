@@ -13,17 +13,20 @@ CONFIG_DIR="$HOME/.config/sway"
 
 echo -e "${YELLOW}This will install configuration files into $CONFIG_DIR${NC}"
 echo -e "${YELLOW}Existing files will be backed up with .backup extension${NC}"
-echo -e "${YELLOW}Do you want to continue? (y/n)${NC}"
-read -r confirm
 
-while [[ ! "$confirm" =~ ^[YyNn]$ ]]; do
-    echo -e "${YELLOW}Please enter y or n:${NC}"
+if [ "${NONINTERACTIVE:-0}" != "1" ]; then
+    echo -e "${YELLOW}Do you want to continue? (y/n)${NC}"
     read -r confirm
-done
 
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    echo "Setup cancelled."
-    exit 0
+    while [[ ! "$confirm" =~ ^[YyNn]$ ]]; do
+        echo -e "${YELLOW}Please enter y or n:${NC}"
+        read -r confirm
+    done
+
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo "Setup cancelled."
+        exit 0
+    fi
 fi
 
 xdg-user-dirs-update 2>/dev/null || true
