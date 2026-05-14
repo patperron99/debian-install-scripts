@@ -1,7 +1,7 @@
 # TODO — Debian Sway Install Suite
 
 Installation Debian opinionée, style Omarchy — Wayland-pur, APT only.
-Dernière mise à jour : 2026-05-12
+Dernière mise à jour : 2026-05-14
 
 ---
 
@@ -9,7 +9,7 @@ Dernière mise à jour : 2026-05-12
 
 | Script | État |
 |--------|------|
-| `debian-install-fresh.sh` | ✅ LUKS + Btrfs + debootstrap |
+| `debian-install-fresh.sh` | ✅ LUKS + Btrfs + debootstrap + install.conf (non-interactif) |
 | `scripts/install-sway.sh` | ✅ APT Debian Testing, zéro Sid requis |
 | `scripts/setup-sway-config.sh` | ✅ Config modulaire complète |
 | `scripts/theme-picker.sh` | ✅ Refactorisé — templates envsubst + fichiers theme |
@@ -28,9 +28,11 @@ Dernière mise à jour : 2026-05-12
 
 ### Améliorations en attente
 
-- [ ] `debian-install-fresh.sh` — Premier boot automatisé :
-  - Copier le repo dans `/mnt/opt/debian-install-scripts/`
-  - Créer service systemd `first-boot-setup.service` (oneshot → postinstall)
+- [x] `debian-install-fresh.sh` — Installation non-interactive via `install.conf` :
+  - `install.conf.example` versionné, `install.conf` gitignored
+  - Passwords collectés une seule fois en début de script, passés au chroot via fichier secrets (shredé après usage)
+  - Locale/timezone/hostname/username non-interactifs dans `chroot_setup.sh`
+  - `setup-sway-config.sh` skippable via `NONINTERACTIVE=1`
 
 - [ ] Nerd Fonts — Remplacer `git clone` (5GB) par téléchargement ciblé `.tar.xz`
   - JetBrainsMono + FiraCode + Hack depuis GitHub releases
@@ -41,7 +43,7 @@ Dernière mise à jour : 2026-05-12
 
 - [ ] Plymouth — configurer splash screen au boot + thème par défaut
 
-- [ ] Power menu — ajouter l'option "Screensaver" (lock + screensaver via `screensaver-launch.sh`)
+- [x] Power menu — option "Screensaver" ajoutée (`powermenu.sh`, lié à `screensaver-launch.sh`)
 
 - [ ] Restauration snapshot au boot — menu GRUB ou script de boot pour rollback Btrfs/snapper
 
