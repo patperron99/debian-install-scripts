@@ -12,7 +12,7 @@ VM_CPUS="${3:-4}"
 VM_DISK_SIZE="${4:-50}"
 ISO_DIR="$HOME/VMs"
 ISO_PATH="$ISO_DIR/debian-testing.iso"
-DEBIAN_ISO_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-testing-amd64-netinst.iso"
+DEBIAN_ISO_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.4.0-amd64-netinst.iso"
 
 echo -e "${GREEN}"
 echo "╔══════════════════════════════════════════════════════════════╗"

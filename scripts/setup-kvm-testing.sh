@@ -158,8 +158,8 @@ else
     echo "  Size: ~600MB (may take a few minutes)"
     echo "  Saving to: $DEBIAN_ISO"
 
-    # Using Debian CDN (pick nearest mirror)
-    ISO_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-testing-amd64-netinst.iso"
+    # Using Debian CDN (Debian 13.4.0 = Testing/Trixie)
+    ISO_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.4.0-amd64-netinst.iso"
 
     if curl -fsSL --progress-bar --connect-timeout 30 -o "$DEBIAN_ISO" "$ISO_URL" 2>/dev/null; then
         echo -e "${GREEN}✓ ISO downloaded${NC}"
