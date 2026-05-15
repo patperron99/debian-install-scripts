@@ -23,8 +23,8 @@ Dernière mise à jour : 2026-05-14
 
 - [x] `scripts/setup-snapshots.sh` — Configure snapper + hooks APT pre/post + timers systemd
 - [x] `scripts/setup-auto-updates.sh` — Timer systemd user pour vérification quotidienne (APT + Flatpak)
-- [ ] `scripts/setup-multimonitor.sh` — Config interactive workspaces par moniteur via `kanshi`
-- [ ] `scripts/fetch-wallpapers.sh` — Télécharge wallpapers curatés libres de droits par thème
+- [x] `scripts/setup-multimonitor.sh` — Config interactive workspaces par moniteur via `kanshi`
+- [x] `scripts/fetch-wallpapers.sh` — Télécharge wallpapers curatés libres de droits par thème
 
 ### Améliorations en attente
 

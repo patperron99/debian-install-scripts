@@ -1,175 +1,186 @@
 #!/bin/bash
-# setup-multimonitor.sh — Interactive multi-monitor setup
-# Assigns workspaces 1-3 to primary, 4-10 to secondary.
-# Writes workspace rules to monitors.conf and a kanshi profile.
+# setup-multimonitor.sh — Configure Sway multi-monitor workspaces
+# - Detects connected monitors via swaymsg
+# - Creates kanshi profiles for different configurations
+# - Generates workspaces.conf with monitor-specific workspace assignments
 
 set -uo pipefail
 
 source "$(dirname "$0")/common_functions.sh"
 
-MONITORS_CONF="$HOME/.config/hypr/monitors.conf"
 KANSHI_CONF="$HOME/.config/kanshi/config"
+SWAY_WORKSPACES="$HOME/.config/sway/workspaces.conf"
 
-echo -e "${GREEN}=== Multi-Monitor Setup ===${NC}"
-echo "Workspaces: Primary → 1-3 | Secondary → 4-10"
+echo -e "${GREEN}=== Sway Multi-Monitor Setup ===${NC}"
+echo "Configure workspace layout across multiple monitors."
 echo ""
 
-# ── Detect available monitors ────────────────────────────────────────────────
-declare -a DETECTED=()
+# --- DETECT MONITORS ---
+echo "Detecting monitors..."
+declare -a MONITORS=()
 
-if command -v hyprctl &>/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-    # Inside Hyprland session — use hyprctl
-    while IFS= read -r line; do
-        DETECTED+=("$line")
-    done < <(hyprctl monitors -j 2>/dev/null \
-        | python3 -c "import json,sys; m=json.load(sys.stdin); [print(x['name']) for x in m]" \
-        2>/dev/null)
-fi
-
-# Fallback: scan /sys/class/drm for connected outputs
-if [ ${#DETECTED[@]} -eq 0 ]; then
-    while IFS= read -r drm_connector; do
-        status=$(cat "$drm_connector/status" 2>/dev/null)
-        if [ "$status" = "connected" ]; then
-            name=$(basename "$drm_connector")
-            # Convert kernel name (card1-HDMI-A-1) to Hyprland name (HDMI-A-1)
-            name="${name#card*-}"
-            DETECTED+=("$name")
+if command -v swaymsg &>/dev/null && swaymsg -t get_outputs &>/dev/null; then
+    while IFS= read -r monitor_json; do
+        if [ -n "$monitor_json" ]; then
+            # Parse JSON to extract name (assumes jq is available, fallback to grep)
+            if command -v jq &>/dev/null; then
+                name=$(echo "$monitor_json" | jq -r '.name' 2>/dev/null)
+            else
+                # Fallback: extract from JSON without jq
+                name=$(echo "$monitor_json" | grep -o '"name":"[^"]*' | cut -d'"' -f4)
+            fi
+            if [ -n "$name" ] && [ "$name" != "null" ]; then
+                MONITORS+=("$name")
+            fi
         fi
-    done < <(find /sys/class/drm -name "card?-*" -type d 2>/dev/null | sort)
+    done < <(swaymsg -t get_outputs 2>/dev/null | grep -o '{[^}]*"name"[^}]*}')
 fi
 
-if [ ${#DETECTED[@]} -eq 0 ]; then
-    echo -e "${YELLOW}Could not detect monitors automatically.${NC}"
-    echo "Enter monitor names manually (from 'hyprctl monitors' or xrandr)."
+if [ ${#MONITORS[@]} -eq 0 ]; then
+    echo -e "${YELLOW}Could not auto-detect monitors.${NC}"
+    echo "Falling back to manual entry..."
     echo ""
-    echo -e "${YELLOW}Primary monitor name (e.g. eDP-1):${NC}"
+    echo -e "${YELLOW}Enter monitor name for primary (e.g., eDP-1, HDMI-A-1):${NC}"
     read -r PRIMARY
-    echo -e "${YELLOW}Secondary monitor name (leave blank if none):${NC}"
+    echo -e "${YELLOW}Enter monitor name for secondary (or press Enter to skip):${NC}"
     read -r SECONDARY
+    MONITORS=("$PRIMARY")
+    [ -n "$SECONDARY" ] && MONITORS+=("$SECONDARY")
 else
     echo "Detected monitors:"
-    for i in "${!DETECTED[@]}"; do
-        echo "  $((i+1))) ${DETECTED[$i]}"
+    for i in "${!MONITORS[@]}"; do
+        echo "  $((i+1))) ${MONITORS[$i]}"
     done
     echo ""
 
-    if [ ${#DETECTED[@]} -eq 1 ]; then
-        PRIMARY="${DETECTED[0]}"
+    if [ ${#MONITORS[@]} -eq 1 ]; then
+        PRIMARY="${MONITORS[0]}"
         SECONDARY=""
-        echo -e "${GREEN}Single monitor: $PRIMARY (workspaces 1-10)${NC}"
+        echo -e "${GREEN}Single monitor detected: $PRIMARY${NC}"
     else
-        echo -e "${YELLOW}Select PRIMARY monitor number (workspaces 1-3):${NC}"
-        read -r pri_sel
-        while ! [[ "$pri_sel" =~ ^[0-9]+$ ]] || \
-              [ "$pri_sel" -lt 1 ] || [ "$pri_sel" -gt "${#DETECTED[@]}" ]; do
-            echo -e "${YELLOW}Enter a number between 1 and ${#DETECTED[@]}:${NC}"
-            read -r pri_sel
-        done
-        PRIMARY="${DETECTED[$((pri_sel-1))]}"
+        echo -e "${YELLOW}Select primary monitor (default is 1):${NC}"
+        read -rp "Choice (1-${#MONITORS[@]}): " primary_choice
+        primary_choice=${primary_choice:-1}
+
+        if ! [[ "$primary_choice" =~ ^[0-9]+$ ]] || ((primary_choice < 1 || primary_choice > ${#MONITORS[@]})); then
+            primary_choice=1
+        fi
+        PRIMARY="${MONITORS[$((primary_choice - 1))]}"
 
         echo ""
-        echo -e "${YELLOW}Select SECONDARY monitor (workspaces 4-10), or 0 for none:${NC}"
-        read -r sec_sel
-        if [[ "$sec_sel" =~ ^[0-9]+$ ]] && [ "$sec_sel" -gt 0 ] && \
-           [ "$sec_sel" -le "${#DETECTED[@]}" ] && [ "$sec_sel" -ne "$pri_sel" ]; then
-            SECONDARY="${DETECTED[$((sec_sel-1))]}"
-        else
-            SECONDARY=""
+        echo -e "${YELLOW}Select secondary monitor (or press Enter to skip):${NC}"
+        read -rp "Choice (1-${#MONITORS[@]}, or Enter): " secondary_choice
+
+        SECONDARY=""
+        if [[ "$secondary_choice" =~ ^[0-9]+$ ]] && ((secondary_choice >= 1 && secondary_choice <= ${#MONITORS[@]})); then
+            SECONDARY="${MONITORS[$((secondary_choice - 1))]}"
         fi
     fi
 fi
 
 echo ""
-echo -e "${GREEN}Primary: $PRIMARY${NC}"
-[ -n "$SECONDARY" ] && echo -e "${GREEN}Secondary: $SECONDARY${NC}"
-
-# ── Write monitors.conf ──────────────────────────────────────────────────────
+echo -e "${GREEN}Configuration:${NC}"
+echo "  Primary:   $PRIMARY"
+echo "  Secondary: ${SECONDARY:-(none)}"
 echo ""
-echo "Writing monitors.conf..."
-mkdir -p "$(dirname "$MONITORS_CONF")"
 
-{
-    echo "# Monitor Configuration"
-    echo "# Generated by setup-multimonitor.sh"
-    echo ""
-    echo "# Auto-configure all connected monitors"
-    echo "monitor = $PRIMARY, preferred, 0x0, 1"
-    if [ -n "$SECONDARY" ]; then
-        echo "monitor = $SECONDARY, preferred, auto, 1"
-    fi
-    echo "monitor = , preferred, auto, 1"
-    echo ""
-    echo "# Workspace assignments"
-    echo "workspace = 1, monitor:$PRIMARY, default:true"
-    echo "workspace = 2, monitor:$PRIMARY"
-    echo "workspace = 3, monitor:$PRIMARY"
-    if [ -n "$SECONDARY" ]; then
-        echo "workspace = 4, monitor:$SECONDARY, default:true"
-        echo "workspace = 5, monitor:$SECONDARY"
-        echo "workspace = 6, monitor:$SECONDARY"
-        echo "workspace = 7, monitor:$SECONDARY"
-        echo "workspace = 8, monitor:$SECONDARY"
-        echo "workspace = 9, monitor:$SECONDARY"
-        echo "workspace = 10, monitor:$SECONDARY"
-    else
-        echo "workspace = 4, monitor:$PRIMARY"
-        echo "workspace = 5, monitor:$PRIMARY"
-        echo "workspace = 6, monitor:$PRIMARY"
-        echo "workspace = 7, monitor:$PRIMARY"
-        echo "workspace = 8, monitor:$PRIMARY"
-        echo "workspace = 9, monitor:$PRIMARY"
-        echo "workspace = 10, monitor:$PRIMARY"
-    fi
-} > "$MONITORS_CONF"
+# --- CREATE WORKSPACES.CONF ---
+echo "Generating workspaces configuration..."
+mkdir -p "$HOME/.config/sway"
 
-echo -e "${GREEN}Written: $MONITORS_CONF${NC}"
+if [ -z "$SECONDARY" ]; then
+    # Single monitor: all workspaces on primary
+    cat > "$SWAY_WORKSPACES" << EOF
+# Sway workspace assignments
+# Generated by setup-multimonitor.sh
 
-# ── Write kanshi profile ─────────────────────────────────────────────────────
-echo ""
-echo "Writing kanshi config..."
-mkdir -p "$(dirname "$KANSHI_CONF")"
+# Single monitor configuration
+workspace 1 output $PRIMARY
+workspace 2 output $PRIMARY
+workspace 3 output $PRIMARY
+workspace 4 output $PRIMARY
+workspace 5 output $PRIMARY
+workspace 6 output $PRIMARY
+workspace 7 output $PRIMARY
+workspace 8 output $PRIMARY
+workspace 9 output $PRIMARY
+workspace 10 output $PRIMARY
+EOF
+else
+    # Multi-monitor: 1-5 on primary, 6-10 on secondary
+    cat > "$SWAY_WORKSPACES" << EOF
+# Sway workspace assignments
+# Generated by setup-multimonitor.sh
 
-{
-    echo "# kanshi multi-monitor profiles"
-    echo "# Generated by setup-multimonitor.sh"
-    echo "#"
-    echo "# Run 'hyprctl monitors' to get resolution/refresh info"
-    echo ""
-    echo "# Standalone (laptop lid open or desktop)"
-    echo "profile standalone {"
-    echo "    output $PRIMARY enable"
-    echo "}"
-    if [ -n "$SECONDARY" ]; then
-        echo ""
-        echo "# Docked (both monitors connected)"
-        echo "profile docked {"
-        echo "    output $PRIMARY enable"
-        echo "    output $SECONDARY enable"
-        echo "}"
-        echo ""
-        echo "# External only (laptop lid closed)"
-        echo "profile external {"
-        echo "    output $PRIMARY disable"
-        echo "    output $SECONDARY enable"
-        echo "}"
-    fi
-} > "$KANSHI_CONF"
+# Multi-monitor configuration
+# Primary monitor: workspaces 1-5
+workspace 1 output $PRIMARY
+workspace 2 output $PRIMARY
+workspace 3 output $PRIMARY
+workspace 4 output $PRIMARY
+workspace 5 output $PRIMARY
 
-echo -e "${GREEN}Written: $KANSHI_CONF${NC}"
-
-# ── Reload if inside Hyprland ────────────────────────────────────────────────
-if command -v hyprctl &>/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-    echo ""
-    echo "Reloading Hyprland config..."
-    hyprctl reload && echo -e "${GREEN}Reloaded.${NC}" || echo -e "${YELLOW}Reload failed — restart Hyprland manually.${NC}"
+# Secondary monitor: workspaces 6-10
+workspace 6 output $SECONDARY
+workspace 7 output $SECONDARY
+workspace 8 output $SECONDARY
+workspace 9 output $SECONDARY
+workspace 10 output $SECONDARY
+EOF
 fi
 
+echo -e "${GREEN}Created: $SWAY_WORKSPACES${NC}"
+
+# --- CREATE KANSHI PROFILES ---
 echo ""
-echo -e "${GREEN}=== Multi-monitor setup complete ===${NC}"
+echo "Generating kanshi profiles..."
+mkdir -p "$HOME/.config/kanshi"
+
+cat > "$KANSHI_CONF" << EOF
+# kanshi multi-monitor configuration
+# Profiles are matched in order; first match is used.
+# https://wayland.emersion.fr/kanshi/
+#
+# Get monitor names:  swaymsg -t get_outputs | grep '"name"'
+# Get resolutions:    swaymsg -t get_outputs (look for "current_mode")
+
+# Default: enable all connected outputs
+profile {
+    output * enable
+}
+EOF
+
+echo -e "${GREEN}Created: $KANSHI_CONF${NC}"
+echo "  (default profile: enable all connected monitors)"
+
+# --- SUMMARY & INSTRUCTIONS ---
 echo ""
-echo "Keybindings for workspaces:"
-echo "  SUPER+1-3  → Primary monitor workspaces"
-[ -n "$SECONDARY" ] && echo "  SUPER+4-0  → Secondary monitor workspaces"
+echo -e "${GREEN}=== Configuration Complete ===${NC}"
 echo ""
-echo "Re-run this script anytime you change your monitor setup."
+echo "Workspace layout:"
+if [ -z "$SECONDARY" ]; then
+    echo "  • All workspaces (1-10) on $PRIMARY"
+else
+    echo "  • Primary ($PRIMARY):   workspaces 1-5"
+    echo "  • Secondary ($SECONDARY): workspaces 6-10"
+fi
+echo ""
+echo "Files created:"
+echo "  • $SWAY_WORKSPACES — workspace assignments"
+echo "  • $KANSHI_CONF — monitor profiles"
+echo ""
+echo "Next steps:"
+echo "  1. Edit kanshi profiles in: $KANSHI_CONF"
+echo "     Example for docked setup:"
+echo "       profile docked {"
+echo "         output eDP-1 enable resolution 1920x1080 position 0,1440"
+echo "         output HDMI-A-1 enable resolution 2560x1440 position 0,0"
+echo "       }"
+echo "  2. Reload Sway config: swaymsg reload"
+echo "  3. Kanshi will apply profiles automatically on monitor changes"
+echo ""
+echo "Manual monitor control:"
+echo "  • List monitors:  swaymsg -t get_outputs"
+echo "  • Enable monitor: swaymsg output HDMI-A-1 enable"
+echo "  • Set resolution: swaymsg output HDMI-A-1 resolution 2560x1440"
+echo "  • Set position:   swaymsg output HDMI-A-1 position 0,0"
