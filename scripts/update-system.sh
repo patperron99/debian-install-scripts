@@ -9,18 +9,6 @@ NC='\033[0m'
 echo -e "${GREEN}=== System Update ===${NC}"
 echo ""
 
-# --- Optional BTRFS snapshot ---
-if command -v snapper &>/dev/null && [ "$(findmnt -n -o FSTYPE / 2>/dev/null)" = "btrfs" ]; then
-    echo -e "${YELLOW}BTRFS detected. Create a snapshot before updating? (y/n)${NC}"
-    read -r do_snapshot
-    if [[ "$do_snapshot" =~ ^[Yy]$ ]]; then
-        SNAP_NUM=$(sudo snapper -c root create --type single --cleanup-algorithm number \
-            --print-number --description "pre-manual-update" 2>/dev/null)
-        echo -e "${GREEN}Snapshot #${SNAP_NUM} created.${NC}"
-        echo ""
-    fi
-fi
-
 # --- APT ---
 echo "Refreshing package lists..."
 sudo apt update

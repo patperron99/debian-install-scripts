@@ -1,14 +1,16 @@
 #!/bin/bash
-# setup-auto-updates.sh — Configure systemd user timer for daily update checks
-# Updates check-updates.sh to include Flatpak count alongside APT.
+# setup-auto-updates.sh — Configure APT refresh timer + Waybar update module
+# - System timer: daily apt-get update (root) to keep package lists fresh
+# - APT hook: signals Waybar immediately after any apt/dpkg operation
+# - User timer: belt-and-suspenders Waybar refresh signal
 
 set -uo pipefail
 
 source "$(dirname "$0")/common_functions.sh"
 
 echo -e "${GREEN}=== Auto-Update Check Setup ===${NC}"
-echo "Configures a daily systemd user timer that checks for APT and Flatpak updates."
-echo "Results are shown as a Waybar icon — no automatic installation."
+echo "Configures APT list refresh (system) + Waybar update count (user)."
+echo "No automatic installation — updates are always interactive."
 echo ""
 
 HELPER="$HOME/.local/bin/check-updates.sh"
@@ -22,11 +24,12 @@ cat > "$HELPER" << 'HELPEREOF'
 #!/bin/bash
 # Waybar update module — emits JSON with APT + Flatpak update counts
 
-APT_COUNT=$(apt-get -s upgrade 2>/dev/null | grep -c "^Inst" || echo "0")
-APT_SECURITY=$(apt-get -s upgrade 2>/dev/null | grep -c "^Inst.*security" || echo "0")
+APT_OUTPUT=$(apt-get -s upgrade 2>/dev/null)
+APT_COUNT=$(echo "$APT_OUTPUT" | grep -c "^Inst") || APT_COUNT=0
+APT_SECURITY=$(echo "$APT_OUTPUT" | grep -c "^Inst.*security") || APT_SECURITY=0
 
 if command -v flatpak &>/dev/null; then
-    FLATPAK_COUNT=$(flatpak remote-ls --updates 2>/dev/null | wc -l || echo "0")
+    FLATPAK_COUNT=$(flatpak remote-ls --updates 2>/dev/null | wc -l) || FLATPAK_COUNT=0
 else
     FLATPAK_COUNT=0
 fi
@@ -47,25 +50,73 @@ HELPEREOF
 chmod +x "$HELPER"
 echo -e "${GREEN}Updated: $HELPER${NC}"
 
-# --- SYSTEMD USER SERVICE ---
+# --- APT HOOK: signal Waybar after apt update / dpkg operations ---
 echo ""
-echo "Creating systemd user units..."
-mkdir -p "$SYSTEMD_DIR"
+echo "Installing APT hook to refresh Waybar on package changes..."
 
-cat > "$SYSTEMD_DIR/check-updates.service" << EOF
+sudo tee /usr/local/bin/waybar-signal-updates > /dev/null << 'SCRIPT'
+#!/bin/sh
+pkill -RTMIN+8 waybar 2>/dev/null || true
+SCRIPT
+sudo chmod +x /usr/local/bin/waybar-signal-updates
+
+sudo tee /etc/apt/apt.conf.d/81waybar-updates > /dev/null << 'EOF'
+APT::Update::Post-Invoke-Success { "/usr/local/bin/waybar-signal-updates"; };
+DPkg::Post-Invoke { "/usr/local/bin/waybar-signal-updates"; };
+EOF
+
+echo -e "${GREEN}Installed: /etc/apt/apt.conf.d/81waybar-updates${NC}"
+
+# --- SYSTEM TIMER: daily apt-get update to keep package lists fresh ---
+echo ""
+echo "Installing system timer for daily APT list refresh..."
+
+sudo tee /etc/systemd/system/apt-refresh.service > /dev/null << 'EOF'
 [Unit]
-Description=Check for APT and Flatpak updates (Waybar module)
+Description=Daily APT package list refresh
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=$HELPER
+ExecStart=/usr/bin/apt-get update -qq
+EOF
+
+sudo tee /etc/systemd/system/apt-refresh.timer > /dev/null << 'EOF'
+[Unit]
+Description=Daily APT package list refresh
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now apt-refresh.timer \
+    && echo -e "${GREEN}Timer enabled: apt-refresh.timer (daily apt-get update)${NC}" \
+    || echo -e "${YELLOW}Could not enable apt-refresh.timer — run: sudo systemctl enable --now apt-refresh.timer${NC}"
+
+# --- SYSTEMD USER SERVICE: signal Waybar on timer tick ---
+echo ""
+echo "Creating systemd user units..."
+mkdir -p "$SYSTEMD_DIR"
+
+cat > "$SYSTEMD_DIR/check-updates.service" << 'EOF'
+[Unit]
+Description=Refresh Waybar update count
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pkill -RTMIN+8 waybar
 EOF
 
 cat > "$SYSTEMD_DIR/check-updates.timer" << 'EOF'
 [Unit]
-Description=Daily update check timer
+Description=Periodic Waybar update count refresh
 
 [Timer]
 OnBootSec=5min
@@ -78,19 +129,23 @@ EOF
 
 echo -e "${GREEN}Created: $SYSTEMD_DIR/check-updates.{service,timer}${NC}"
 
-# --- ENABLE TIMER ---
+# --- ENABLE USER TIMER ---
 echo ""
 systemctl --user daemon-reload
 systemctl --user enable --now check-updates.timer \
-    && echo -e "${GREEN}Timer enabled: check-updates.timer (daily + 5min after boot)${NC}" \
+    && echo -e "${GREEN}Timer enabled: check-updates.timer${NC}" \
     || echo -e "${YELLOW}Could not enable timer — run manually after login: systemctl --user enable --now check-updates.timer${NC}"
 
 echo ""
 echo -e "${GREEN}=== Auto-update check configured ===${NC}"
 echo ""
-echo "The Waybar icon updates automatically:"
+echo "Update flow:"
+echo "  1. apt-refresh.timer runs apt-get update daily (system)"
+echo "  2. APT hook signals Waybar immediately after any apt/dpkg operation"
+echo "  3. Waybar re-runs check-updates.sh and shows fresh count"
+echo ""
 echo "  Green  = system up to date"
 echo "  Orange = updates available (count shown)"
 echo "  Click  = open terminal to apply updates interactively"
 echo ""
-echo "Manual trigger: systemctl --user start check-updates.service"
+echo "Manual trigger: sudo apt-get update  (APT hook signals Waybar automatically)"

@@ -21,8 +21,8 @@ Dernière mise à jour : 2026-05-14
 
 ### Scripts manquants
 
-- [ ] `scripts/setup-snapshots.sh` — Configure snapper + hooks APT pre/post + timers systemd
-- [ ] `scripts/setup-auto-updates.sh` — Timer systemd user pour vérification quotidienne (APT + Flatpak)
+- [x] `scripts/setup-snapshots.sh` — Configure snapper + hooks APT pre/post + timers systemd
+- [x] `scripts/setup-auto-updates.sh` — Timer systemd user pour vérification quotidienne (APT + Flatpak)
 - [ ] `scripts/setup-multimonitor.sh` — Config interactive workspaces par moniteur via `kanshi`
 - [ ] `scripts/fetch-wallpapers.sh` — Télécharge wallpapers curatés libres de droits par thème
 
@@ -38,14 +38,15 @@ Dernière mise à jour : 2026-05-14
   - JetBrainsMono + FiraCode + Hack depuis GitHub releases
   - Installer dans `~/.local/share/fonts/` + `fc-cache -fv`
 
-- [ ] Waybar — module `custom/updates` : compte APT + Flatpak, clic → terminal upgrade
-  - Bug : le statut ne se rafraîchit pas après une mise à jour (cache pas invalidé)
+- [x] Waybar — module `custom/updates` : compte APT + Flatpak, clic → terminal upgrade
+  - APT hook `81waybar-updates` signale Waybar après `apt update` / dpkg
+  - Timer système `apt-refresh.timer` fait `apt-get update` quotidien (root)
 
 - [ ] Plymouth — configurer splash screen au boot + thème par défaut
 
 - [x] Power menu — option "Screensaver" ajoutée (`powermenu.sh`, lié à `screensaver-launch.sh`)
 
-- [ ] Restauration snapshot au boot — menu GRUB ou script de boot pour rollback Btrfs/snapper
+- [x] Restauration snapshot au boot — grub-btrfs (menu GRUB) + `restore-snapshot` (swap subvolume @)
 
 ---
 
