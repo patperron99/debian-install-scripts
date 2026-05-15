@@ -1,8 +1,10 @@
-# Debian Install Scripts
+# Debian Install Scripts — Sway Edition
 
-Automation suite for fresh Debian installations with a Wayland-pure Hyprland desktop.
+Automation suite for fresh Debian installations with a Wayland-pure **Sway** desktop.
 
-Targets **Debian Testing (Forky)** and **Sid (Unstable)**. All packages are installed via APT — no compilation required.
+Targets **Debian Testing (Forky)** — all packages from APT, zero compilation required.
+
+> **Note:** For legacy Hyprland support, see `docs/legacy/README.md`
 
 ---
 
@@ -26,7 +28,7 @@ sudo bash debian-install-fresh.sh
 sudo apt install git
 git clone https://github.com/patperron99/debian-install-scripts
 cd debian-install-scripts
-bash postinstall-hyprland.sh
+bash postinstall-sway.sh
 ```
 
 The interactive menu lets you run everything at once or step by step:
@@ -34,19 +36,20 @@ The interactive menu lets you run everything at once or step by step:
 ```
   a) Install everything (recommended)
   ────────────────────────────────────
-  1) Core + Hyprland packages
+  1) Core + Sway packages
   2) Deploy configuration files
-  3) Extras  (neovim, tmux, fonts, wlogout)
+  3) Extras  (neovim, tmux, fonts, bluetui)
   4) Theme   (GTK, cursor, Neovim/LazyVim)
-  5) Lock screen  (hyprlock + hypridle)
-  6) Wallpapers
-  7) Auto-update timer
-  8) Multi-monitor layout
+  5) Wallpapers
+  6) Auto-update timer
+  7) BTRFS snapshots + GRUB boot entries
+  8) Plymouth boot splash screen
+  9) Multi-monitor layout
   ────────────────────────────────────
-  9) Verify installation
+  10) Verify installation
 ```
 
-Reboot when done — greetd/tuigreet lancera **Hyprland** automatiquement.
+Reboot when done — autologin on TTY1, **Sway** starts automatically.
 
 ---
 
@@ -54,17 +57,18 @@ Reboot when done — greetd/tuigreet lancera **Hyprland** automatiquement.
 
 ```
 debian-install-fresh.sh
-  └── postinstall-hyprland.sh               # Interactive menu
-        ├── scripts/install-hyprland.sh     # Packages from APT (Forky + Sid)
-        ├── scripts/setup-hyprland-config.sh# Deploy all configs
-        ├── scripts/install-extras-hyprland.sh # Dev tools, fonts, TPM, Flatpak
-        ├── scripts/setup-theme.sh          # GTK + cursor + Neovim
-        ├── scripts/setup-hyprlock.sh       # Lock screen
-        ├── scripts/fetch-wallpapers.sh     # Download wallpapers
-        ├── scripts/setup-wallpaper.sh      # Select wallpaper
-        ├── scripts/setup-auto-updates.sh   # Systemd update timer
-        ├── scripts/setup-multimonitor.sh   # Monitor layout
-        └── scripts/verify-install.sh       # Diagnostic
+  └── postinstall-sway.sh                 # Interactive menu
+        ├── scripts/install-sway.sh       # Step 1: Core Sway packages
+        ├── scripts/setup-sway-config.sh  # Step 2: Deploy configs
+        ├── scripts/install-extras-sway.sh # Step 3: Dev tools, fonts, bluetui
+        ├── scripts/setup-theme.sh         # Step 4: GTK + cursor + Neovim
+        ├── scripts/fetch-wallpapers.sh    # Step 5: Download wallpapers
+        ├── scripts/setup-auto-updates.sh  # Step 6: APT timers + Waybar
+        ├── scripts/setup-snapshots.sh     # Step 7a: Btrfs snapshots
+        ├── scripts/setup-snapshot-boot.sh # Step 7b: GRUB recovery menu
+        ├── scripts/setup-plymouth.sh      # Step 8: Boot splash screen
+        ├── scripts/setup-multimonitor.sh  # Step 9: Kanshi + workspaces
+        └── scripts/verify-install.sh      # Step 10: Diagnostic checks
 ```
 
 **Scripts re-runnable individually at any time:**
@@ -72,9 +76,8 @@ debian-install-fresh.sh
 ```
 scripts/setup-wallpaper.sh       # Select wallpaper interactively
 scripts/setup-theme.sh           # GTK / cursor / Qt / Neovim theme
-scripts/setup-hyprlock.sh        # Lock screen timers
-scripts/setup-updates.sh         # Interactive system updater
-scripts/setup-auto-updates.sh    # Daily update check (systemd timer)
+scripts/setup-auto-updates.sh    # Daily APT update check (systemd timer)
+scripts/setup-snapshots.sh       # Btrfs snapper configuration
 scripts/setup-multimonitor.sh    # Workspace-per-monitor layout
 scripts/verify-install.sh        # PASS/FAIL diagnostic
 ```
@@ -82,37 +85,49 @@ scripts/verify-install.sh        # PASS/FAIL diagnostic
 **Helper scripts installed to `~/.local/bin/`:**
 
 ```
-powermenu.sh      # SUPER+SHIFT+P — power menu (wlogout)
-wallpaper-next.sh # SUPER+W       — cycle wallpaper
-theme-picker.sh   # SUPER+SHIFT+T — live theme switcher (wofi)
-check-updates.sh  # Waybar badge  — APT + Flatpak update count
+powermenu.sh       # Super key       — power menu (reboot/suspend/logout)
+wallpaper-next.sh  # SUPER+W         — cycle wallpaper
+screensaver-launch.sh # SUPER+S       — start terminal screensaver
+theme-picker.sh    # SUPER+T         — live theme switcher
+check-updates.sh   # Waybar module   — APT + Flatpak update count
 ```
 
 ---
 
-## Configuration files deployed
+## Configuration Files Deployed
 
-`setup-hyprland-config.sh` copies all configs from `configs/` into `~/.config/`:
+`setup-sway-config.sh` copies all configs from `configs/` into `~/.config/`:
 
 | Source | Destination | Description |
 |---|---|---|
-| `configs/hypr/` | `~/.config/hypr/` | Hyprland — modular conf files |
+| `configs/sway/` | `~/.config/sway/` | Sway — main config |
 | `configs/waybar/` | `~/.config/waybar/` | Status bar |
 | `configs/wofi/` | `~/.config/wofi/` | App launcher |
-| `configs/wlogout/` | `~/.config/wlogout/` | Power menu |
 | `configs/mako/` | `~/.config/mako/` | Notification daemon |
 | `configs/kanshi/` | `~/.config/kanshi/` | Multi-monitor profiles |
 | `configs/alacritty/` | `~/.config/alacritty/` | Terminal (+ themes) |
-| `configs/kitty/` | `~/.config/kitty/` | Terminal (Nord theme) |
 | `configs/tmux/` | `~/.config/tmux/` | Multiplexer (Nord + TPM) |
 | `configs/bashrc/` | `~/.bashrc` | Shell (Nord prompt, aliases) |
 | `configs/nvim/` | `~/.config/nvim/` | Neovim — LazyVim + Nord |
+| `configs/hypr/hyprlock.conf` | `~/.config/hypr/hyprlock.conf` | Lock screen |
 
 `setup-theme.sh` writes GTK/cursor/Qt settings dynamically based on your choices.
 
 ---
 
-## Scripts
+## Key Features
+
+✅ **Wayland-pure** — No X11, no GNOME/KDE bloat  
+✅ **APT-only** — All packages from Debian Testing, zero compilation  
+✅ **Disk encryption** — Full LUKS + Btrfs setup  
+✅ **Snapshots** — Automated Btrfs snapshots with GRUB boot menu  
+✅ **TUI-first** — Pulsemixer (audio), bluetui (Bluetooth), lf (files)  
+✅ **Modular** — Install step-by-step or all at once  
+✅ **Idempotent** — Safe to re-run any script  
+
+---
+
+## Scripts Reference
 
 ### `debian-install-fresh.sh`
 
@@ -124,50 +139,49 @@ sudo bash debian-install-fresh.sh
 
 ---
 
-### `postinstall-hyprland.sh`
+### `postinstall-sway.sh`
 
-Interactive menu — single entry point after first boot. Choose `a` to install everything or `1–9` for individual steps. Re-running is safe; each step is idempotent.
+Interactive menu — single entry point after first boot. Choose `a` to install everything or `1–10` for individual steps. Re-running is safe; each step is idempotent.
 
 ```bash
-bash postinstall-hyprland.sh
+bash postinstall-sway.sh
 ```
 
 ---
 
-### `scripts/install-hyprland.sh`
+### `scripts/install-sway.sh`
 
-Installs the full Hyprland ecosystem from APT. Automatically adds Sid sources if needed and pins them to prevent unintended upgrades.
+Installs the full Sway ecosystem from APT Testing.
 
-**Forky:** waybar, wofi, mako-notifier, grim, slurp, kanshi, alacritty, greetd, tuigreet, wf-recorder, swaybg, and more.  
-**Sid:** hyprland, xdg-desktop-portal-hyprland, hyprlock, hypridle, hyprpicker, swayosd, cliphist.
+**Packages:** sway, swaybg, swayidle, waybar, wofi, mako-notifier, grim, slurp, wf-recorder, alacritty, pipewire, wireplumber, pulsemixer, kanshi, udiskie, brightnessctl, playerctl, iwd, bluez, and more.
 
 ```bash
-bash scripts/install-hyprland.sh
+bash scripts/install-sway.sh
 ```
 
 ---
 
-### `scripts/setup-hyprland-config.sh`
+### `scripts/setup-sway-config.sh`
 
-Deploys all configuration files from `configs/` to their destinations (see table above). Backs up existing files with a `.backup` extension before overwriting.
+Deploys all configuration files from `configs/` to their destinations. Backs up existing files with a `.backup` extension before overwriting.
 
 ```bash
-bash scripts/setup-hyprland-config.sh
+bash scripts/setup-sway-config.sh
 ```
 
 ---
 
-### `scripts/install-extras-hyprland.sh`
+### `scripts/install-extras-sway.sh`
 
 Installs developer tools and sets up language runtimes:
 
-- **Packages:** neovim, tmux, cmake, flatpak, ripgrep, fd-find, fastfetch, wlogout, and more
-- **Nerd Fonts:** JetBrainsMono, FiraCode, Hack (downloaded from GitHub releases)
+- **Packages:** neovim, tmux, cmake, ripgrep, fd-find, fastfetch, jq, shellcheck, and more
+- **Nerd Fonts:** JetBrainsMono, FiraCode, Hack (v3.2.1 from GitHub releases)
+- **bluetui:** Python TUI Bluetooth manager (via pip)
 - **TPM:** Tmux Plugin Manager cloned to `~/.config/tmux/plugins/tpm`
-- **Flatpak:** Flathub remote + Zen browser
 
 ```bash
-bash scripts/install-extras-hyprland.sh
+bash scripts/install-extras-sway.sh
 ```
 
 ---
@@ -179,7 +193,7 @@ Configures GTK theme, icon theme, cursor, Qt5ct, and Neovim.
 **GTK choices:** Arc-Dark, Arc, Numix-Dark, Adwaita  
 **Cursor choices:** Bibata-Modern-Classic, Breeze, Adwaita  
 **Icons:** Papirus-Dark  
-**Neovim:** LazyVim base + Nord colorscheme (`configs/nvim/lua/plugins/colorscheme.lua`)
+**Neovim:** LazyVim base + Nord colorscheme
 
 ```bash
 bash scripts/setup-theme.sh
@@ -187,45 +201,15 @@ bash scripts/setup-theme.sh
 
 ---
 
-### `scripts/setup-hyprlock.sh`
-
-Deploys `hyprlock.conf` and `hypridle.conf` from `configs/hypr/`, then enables hypridle in `autostart.conf`.
-
-**Idle timers:** dim at 5 min → lock at 10 min → display off at 15 min → suspend at 30 min.
-
-```bash
-bash scripts/setup-hyprlock.sh
-```
-
----
-
-### `scripts/setup-wallpaper.sh`
-
-Interactive wallpaper picker. Lists images from `~/Pictures/Wallpapers/`, writes `~/.config/hypr/hyprpaper.conf`, and applies the change live if Hyprland is running.
-
-```bash
-bash scripts/setup-wallpaper.sh
-```
-
----
-
-### `scripts/setup-updates.sh`
-
-System updater with Waybar integration.
-
-- **Interactive mode:** `apt update` → list pending → prompt upgrade → detect reboot-required
-- **`--check` mode:** emits Waybar JSON with APT + Flatpak update counts
-
-```bash
-bash scripts/setup-updates.sh           # Interactive
-bash scripts/setup-updates.sh --check   # Waybar JSON
-```
-
----
-
 ### `scripts/setup-auto-updates.sh`
 
-Creates a systemd user timer that runs `check-updates.sh` daily and 5 min after boot. Results appear as a Waybar badge (green = up to date, orange = updates available).
+Creates APT hooks and systemd timers for automatic update checks:
+
+- **System timer:** Daily `apt-get update` (root)
+- **APT hook:** Signals Waybar immediately on package changes
+- **User timer:** Periodic Waybar refresh (5 min after boot, then hourly)
+
+Results appear as a Waybar badge (green = up to date, orange = updates available).
 
 ```bash
 bash scripts/setup-auto-updates.sh
@@ -233,9 +217,39 @@ bash scripts/setup-auto-updates.sh
 
 ---
 
+### `scripts/setup-snapshots.sh`
+
+Configures Btrfs snapshots with snapper, APT hooks, and systemd timers. Requires Btrfs filesystem (created by `debian-install-fresh.sh`).
+
+```bash
+bash scripts/setup-snapshots.sh
+```
+
+---
+
+### `scripts/setup-snapshot-boot.sh`
+
+Sets up GRUB menu with grub-btrfs to boot from snapshots, plus `restore-snapshot` script for interactive snapshot rollback.
+
+```bash
+bash scripts/setup-snapshot-boot.sh
+```
+
+---
+
+### `scripts/setup-plymouth.sh`
+
+Configures Plymouth boot splash screen. Interactive theme selection from available themes.
+
+```bash
+bash scripts/setup-plymouth.sh
+```
+
+---
+
 ### `scripts/setup-multimonitor.sh`
 
-Detects connected monitors (via `hyprctl` or `/sys/class/drm`) and assigns workspaces: 1–3 on primary, 4–10 on secondary. Writes `monitors.conf` and a `kanshi` profile.
+Detects connected monitors (via `swaymsg`) and assigns workspaces: 1–5 on primary, 6–10 on secondary. Writes `workspaces.conf` and kanshi profiles.
 
 ```bash
 bash scripts/setup-multimonitor.sh
@@ -243,9 +257,19 @@ bash scripts/setup-multimonitor.sh
 
 ---
 
+### `scripts/fetch-wallpapers.sh`
+
+Downloads curated free wallpapers from Unsplash to `~/Pictures/Wallpapers/` with theme-specific variants.
+
+```bash
+bash scripts/fetch-wallpapers.sh
+```
+
+---
+
 ### `scripts/verify-install.sh`
 
-Read-only diagnostic. Checks binaries, systemd services, config files, APT sources, and Wayland purity. Exits 0 if all required checks pass.
+Read-only diagnostic. Checks binaries, systemd services, config files, and Wayland purity. Exits 0 if all required checks pass.
 
 ```bash
 bash scripts/verify-install.sh
@@ -253,46 +277,53 @@ bash scripts/verify-install.sh
 
 ---
 
-## Default Keybindings
+## Keyboard Shortcuts
 
 | Shortcut | Action |
-|---|---|
-| `SUPER + Return` | Terminal (alacritty) |
-| `SUPER + D` | App launcher (wofi) |
-| `SUPER + E` | File manager (nautilus) |
-| `SUPER + Q` | Close window |
-| `SUPER + F` | Fullscreen |
-| `SUPER + L` | Lock screen (hyprlock) |
-| `SUPER + W` | Cycle wallpaper |
-| `SUPER + B` | Bluetooth manager (blueman) |
-| `SUPER + C` | Clipboard history (cliphist + wofi) |
-| `SUPER + SHIFT + P` | Power menu (wlogout) |
-| `SUPER + SHIFT + T` | Theme picker (wofi) |
-| `SUPER + SHIFT + A` | Audio control (pavucontrol) |
-| `SUPER + SHIFT + C` | Color picker (hyprpicker) |
-| `SUPER + SHIFT + R` | Screen recording toggle (wf-recorder) |
-| `SUPER + 1–3` | Switch workspace (primary monitor) |
-| `SUPER + 4–0` | Switch workspace (secondary monitor) |
-| `Print` | Screenshot area → clipboard |
-| `SUPER + Print` | Screenshot → `~/Pictures/Screenshots/` |
+|----------|--------|
+| Super | Power menu (wlogout) |
+| Super + W | Cycle wallpaper |
+| Super + S | Terminal screensaver |
+| Super + T | Live theme switcher |
+| Super + 1–10 | Switch workspace |
+| Super + Shift + 1–10 | Move window to workspace |
 
 ---
 
-## Documentation
+## Troubleshooting
 
-- **[HYPRLAND.md](HYPRLAND.md)** — Troubleshooting and post-install notes
-- **[PACKAGE_STATUS.md](PACKAGE_STATUS.md)** — Package availability matrix for Debian Forky/Sid
-- **[WAYLAND_PURE.md](WAYLAND_PURE.md)** — Wayland-only architecture decisions
-- **[TODO.md](TODO.md)** — Planned improvements and known issues
+### No sound
+```bash
+pulsemixer   # TUI audio mixer
+pactl list short sinks
+```
+
+### Bluetooth issues
+```bash
+bluetui      # TUI Bluetooth manager
+systemctl status bluetooth
+```
+
+### Monitor not detected
+```bash
+swaymsg -t get_outputs   # List monitors
+bash scripts/setup-multimonitor.sh
+```
+
+### System updates failing
+```bash
+sudo apt update
+sudo apt full-upgrade
+```
 
 ---
 
-## Notes
+## Legacy Support
 
-- Requires Debian Testing (Forky) or Sid — not compatible with Debian Stable
-- All scripts must be run from the repository root directory
-- Intended for users familiar with Linux system administration
+For Hyprland (deprecated), see `docs/legacy/README.md`.
+
+---
 
 ## License
 
-MIT License. See the LICENSE file for details.
+MIT
