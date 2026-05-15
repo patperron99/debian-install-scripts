@@ -156,11 +156,18 @@ if virsh list --all 2>/dev/null | grep -q "$VM_NAME"; then
 fi
 
 if [ "${SKIP_VM_CREATION:-false}" != "true" ]; then
-    # Create disk
-    DISK_PATH="/var/lib/libvirt/images/${VM_NAME}.qcow2"
+    # Create disk (try libvirt dir first, fallback to home VMs dir)
+    if [ -w "/var/lib/libvirt/images" ]; then
+        DISK_PATH="/var/lib/libvirt/images/${VM_NAME}.qcow2"
+    else
+        echo -e "${YELLOW}Note: /var/lib/libvirt/images not writable, using $ISO_DIR${NC}"
+        DISK_PATH="$ISO_DIR/${VM_NAME}.qcow2"
+    fi
+
+    mkdir -p "$(dirname "$DISK_PATH")"
     echo "Creating disk: $DISK_PATH (${VM_DISK_SIZE}GB)..."
-    sudo qemu-img create -f qcow2 "$DISK_PATH" "${VM_DISK_SIZE}G" >/dev/null 2>&1
-    sudo chmod 666 "$DISK_PATH"
+    qemu-img create -f qcow2 "$DISK_PATH" "${VM_DISK_SIZE}G" >/dev/null 2>&1
+    chmod 666 "$DISK_PATH"
 
     # Create VM
     echo "Configuring virtual hardware..."
