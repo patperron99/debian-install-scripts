@@ -75,11 +75,18 @@ echo ""
 echo -e "${GREEN}[2/5] Configuring libvirt default network...${NC}"
 echo ""
 
-if sudo virsh net-list 2>/dev/null | grep -q "default.*active"; then
+# Check if network exists
+if virsh net-list 2>/dev/null | grep -q "default.*active"; then
     echo -e "${GREEN}✓ Default network already active${NC}"
+elif virsh net-list --all 2>/dev/null | grep -q "default"; then
+    echo "Network exists but inactive, starting..."
+    virsh net-start default 2>/dev/null || echo -e "${YELLOW}⚠ Could not start network (may require sudo)${NC}"
+    echo -e "${GREEN}✓ Network started${NC}"
 else
-    echo "Creating default network..."
-    cat << 'NETDEF' | sudo virsh net-define /dev/stdin >/dev/null 2>&1 || true
+    echo -e "${YELLOW}⚠ Default network not found${NC}"
+    echo "Creating network (may require sudo password)..."
+    cat << 'NETDEF' | sudo virsh net-define /dev/stdin >/dev/null 2>&1
+
 <network>
   <name>default</name>
   <forward mode='nat'>
@@ -97,9 +104,16 @@ else
 </network>
 NETDEF
 
-    sudo virsh net-start default 2>/dev/null || true
-    sudo virsh net-autostart default 2>/dev/null || true
-    echo -e "${GREEN}✓ Default network configured${NC}"
+    if [ $? -eq 0 ]; then
+        sudo virsh net-start default 2>/dev/null || true
+        sudo virsh net-autostart default 2>/dev/null || true
+        echo -e "${GREEN}✓ Default network created and started${NC}"
+    else
+        echo -e "${YELLOW}⚠ Could not create network automatically${NC}"
+        echo "Run manually:"
+        echo "  sudo virsh net-define (paste the network XML above)"
+        echo "  sudo virsh net-start default"
+    fi
 fi
 
 echo ""
@@ -171,6 +185,14 @@ if [ "${SKIP_VM_CREATION:-false}" != "true" ]; then
 
     # Create VM
     echo "Configuring virtual hardware..."
+
+    # Try to use default network, fallback to user network if not available
+    NETWORK_OPTION="--network network=default"
+    if ! virsh net-list 2>/dev/null | grep -q "default.*active"; then
+        echo "  ⚠ Using user-mode networking (no libvirt network)"
+        NETWORK_OPTION="--network user"
+    fi
+
     virt-install \
         --name "$VM_NAME" \
         --memory "$VM_MEMORY" \
@@ -178,7 +200,7 @@ if [ "${SKIP_VM_CREATION:-false}" != "true" ]; then
         --disk path="$DISK_PATH",format=qcow2 \
         --cdrom "$ISO_PATH" \
         --osinfo debian11 \
-        --network network=default \
+        $NETWORK_OPTION \
         --graphics spice \
         --console pty,target_type=serial \
         --noautoconsole \
