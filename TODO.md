@@ -34,9 +34,9 @@ Dernière mise à jour : 2026-05-14
   - Locale/timezone/hostname/username non-interactifs dans `chroot_setup.sh`
   - `setup-sway-config.sh` skippable via `NONINTERACTIVE=1`
 
-- [ ] Nerd Fonts — Remplacer `git clone` (5GB) par téléchargement ciblé `.tar.xz`
-  - JetBrainsMono + FiraCode + Hack depuis GitHub releases
-  - Installer dans `~/.local/share/fonts/` + `fc-cache -fv`
+- [x] Nerd Fonts — Remplacer `git clone` (5GB) par téléchargement ciblé `.tar.xz`
+  - JetBrainsMono + FiraCode + Hack depuis GitHub releases (v3.2.1)
+  - Installer dans `~/.local/share/fonts/NerdFonts` + `fc-cache -fv` (dans install-extras-sway.sh)
 
 - [x] Waybar — module `custom/updates` : compte APT + Flatpak, clic → terminal upgrade
   - APT hook `81waybar-updates` signale Waybar après `apt update` / dpkg
