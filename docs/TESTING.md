@@ -295,6 +295,42 @@ virt-manager → Display → Change to SPICE (not VNC)
 
 ## Troubleshooting
 
+### "network 'default' is not active" error
+```bash
+# Check network status
+sudo virsh net-list --all
+
+# Create and start default network
+sudo virsh net-define /dev/stdin << 'EOF'
+<network>
+  <name>default</name>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <domain name='default'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.122.2' end='192.168.122.254'/>
+    </dhcp>
+  </ip>
+</network>
+EOF
+
+# Start and autostart
+sudo virsh net-start default
+sudo virsh net-autostart default
+
+# Verify
+sudo virsh net-list
+```
+
+Then restart virt-manager.
+
+---
+
 ### "Permission denied" running virt-manager
 ```bash
 # Log out and back in, then:

@@ -115,6 +115,36 @@ fi
 
 echo ""
 
+# --- FIX DEFAULT NETWORK ---
+echo "Fixing default network (if needed)..."
+if ! sudo virsh net-list 2>/dev/null | grep -q "default.*active"; then
+    echo "Defining default network..."
+    cat << 'NETDEF' | sudo virsh net-define /dev/stdin >/dev/null 2>&1 || true
+<network>
+  <name>default</name>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <domain name='default'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.122.2' end='192.168.122.254'/>
+    </dhcp>
+  </ip>
+</network>
+NETDEF
+    sudo virsh net-start default 2>/dev/null || true
+    sudo virsh net-autostart default 2>/dev/null || true
+    echo -e "${GREEN}✓ Default network configured${NC}"
+else
+    echo -e "${GREEN}✓ Default network already active${NC}"
+fi
+
+echo ""
+
 # --- DOWNLOAD ISO ---
 echo "Downloading Debian Testing ISO for testing..."
 ISO_DIR="$HOME/VMs"
