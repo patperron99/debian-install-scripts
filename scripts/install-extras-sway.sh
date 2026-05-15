@@ -23,22 +23,15 @@ declare -a EXTRA_PACKAGES=(
     "fwupd"
     "shellcheck"
     "npm"
-    "flatpak"
     "fd-find"
     "ripgrep"
     "psmisc"
     "jq"
     "fastfetch"
-    "thunar"
-    "imv"
-    "evince"
-    "mpv"
-    "imagemagick"
-    "avahi-daemon"
 )
 
 echo -e "${GREEN}=== Extras Installation ===${NC}"
-echo "Installs dev tools, fonts, Neovim, Tmux, Flatpak, and Zen browser."
+echo "Installs dev tools, fonts, Neovim, Tmux, and bluetui TUI Bluetooth manager."
 echo ""
 
 _APT_CMD apt update
@@ -111,6 +104,25 @@ chown -R "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.local" 2>/dev/null || tru
 runuser -l "$INSTALL_USER" -c "fc-cache -fv '$FONTS_DIR'" >/dev/null 2>&1 || \
     fc-cache -fv "$FONTS_DIR" >/dev/null 2>&1 || true
 echo -e "${GREEN}Nerd Fonts installed to $FONTS_DIR${NC}"
+
+# ─── BLUETUI: TUI Bluetooth Manager ───────────────────────────────────────────
+echo ""
+echo "Installing bluetui (TUI Bluetooth manager)..."
+if command -v pip3 &>/dev/null; then
+    if sudo -u "$INSTALL_USER" pip3 install --user bluetui 2>/dev/null; then
+        echo -e "${GREEN}✓ bluetui installed${NC}"
+    else
+        echo -e "${YELLOW}Failed to install bluetui via pip3 — trying pip...${NC}"
+        if sudo -u "$INSTALL_USER" pip install --user bluetui 2>/dev/null; then
+            echo -e "${GREEN}✓ bluetui installed${NC}"
+        else
+            echo -e "${YELLOW}Could not install bluetui (optional)${NC}"
+            echo "  Install manually: pip install --user bluetui"
+        fi
+    fi
+else
+    echo -e "${YELLOW}pip3 not found — bluetui skipped${NC}"
+fi
 
 # ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────
 echo ""

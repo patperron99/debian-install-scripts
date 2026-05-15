@@ -50,12 +50,13 @@ declare -a PACKAGES=(
   "wl-clipboard"
   "cliphist"
 
-  # Audio (PipeWire only)
+  # Audio (PipeWire + TUI mixer)
   "pipewire"
   "pipewire-pulse"
   "pipewire-alsa"
   "wireplumber"
   "pamixer"
+  "pulsemixer"
 
   # Network
   "iwd"
@@ -83,14 +84,8 @@ declare -a PACKAGES=(
   "brightnessctl"
   "playerctl"
   "bluez"
-  "blueman"
-  "pavucontrol"
   "kanshi"
   "swayimg"
-  "imagemagick"
-  "mpv"
-  "imv"
-  "evince"
 
   # Qt Wayland support
   "qtwayland5"
