@@ -42,7 +42,7 @@ Dernière mise à jour : 2026-05-14
   - APT hook `81waybar-updates` signale Waybar après `apt update` / dpkg
   - Timer système `apt-refresh.timer` fait `apt-get update` quotidien (root)
 
-- [ ] Plymouth — configurer splash screen au boot + thème par défaut
+- [x] Plymouth — configurer splash screen au boot + thème par défaut
 
 - [x] Power menu — option "Screensaver" ajoutée (`powermenu.sh`, lié à `screensaver-launch.sh`)
 

@@ -57,13 +57,18 @@ step_updates() {
 }
 
 step_snapshots() {
-    section "7/8 — BTRFS snapshots + GRUB boot entries"
+    section "7/9 — BTRFS snapshots + GRUB boot entries"
     bash scripts/setup-snapshots.sh
     bash scripts/setup-snapshot-boot.sh
 }
 
+step_plymouth() {
+    section "8/9 — Plymouth boot splash screen"
+    bash scripts/setup-plymouth.sh
+}
+
 step_multimonitor() {
-    section "8/8 — Multi-monitor layout"
+    section "9/9 — Multi-monitor layout"
     bash scripts/setup-multimonitor.sh
 }
 
@@ -88,9 +93,10 @@ show_menu() {
     echo "  5) Wallpapers"
     echo "  6) Auto-update timer"
     echo "  7) BTRFS snapshots + GRUB boot entries"
-    echo "  8) Multi-monitor layout"
+    echo "  8) Plymouth boot splash screen"
+    echo "  9) Multi-monitor layout"
     echo "  ────────────────────────────────────"
-    echo "  9) Verify installation"
+    echo "  10) Verify installation"
     echo "  q) Quit"
     echo ""
 }
@@ -113,6 +119,7 @@ while true; do
             step_wallpaper
             step_updates
             step_snapshots
+            step_plymouth
             if confirm_step "Configure multi-monitor layout?"; then
                 step_multimonitor
             fi
@@ -132,14 +139,15 @@ while true; do
         5) step_wallpaper ;;
         6) step_updates ;;
         7) step_snapshots ;;
-        8) step_multimonitor ;;
-        9) step_verify ;;
+        8) step_plymouth ;;
+        9) step_multimonitor ;;
+        10) step_verify ;;
         q|Q)
             echo "Exiting."
             break
             ;;
         *)
-            echo -e "${YELLOW}Invalid choice. Enter a, 1-9, or q.${NC}"
+            echo -e "${YELLOW}Invalid choice. Enter a, 1-10, or q.${NC}"
             ;;
     esac
 done
