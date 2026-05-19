@@ -1,7 +1,7 @@
 # TODO — Debian Sway Install Suite
 
 Installation Debian opinionée, style Omarchy — Wayland-pur, APT only.
-Dernière mise à jour : 2026-05-21
+Dernière mise à jour : 2026-05-22
 
 ---
 
@@ -61,6 +61,7 @@ Dernière mise à jour : 2026-05-21
 - [x] APT hooks — Fix exit codes pour APT 3.0 (`exit 0` explicite, `Post-Invoke-Success` → `Post-Invoke`)
 - [x] Vestiges Hyprland — `WAYLAND_PURE.md` archivé dans `docs/legacy/`, `setup-updates.sh` supprimé, commentaire `kanshi/config` corrigé
 - [x] Bluetooth — `bluetui` binaire GitHub (musl statique, x86_64/aarch64) remplace blueman + pip inexistant ; vérification de version dans `check-updates.sh`
+- [x] Audio — `pulsemixer` TUI remplace `pavucontrol` (non installé) sur le clic waybar ; fenêtre flottante via `app_id="pulsemixer"`
 
 ---
 
