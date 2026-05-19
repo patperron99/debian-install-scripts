@@ -1,7 +1,7 @@
 # TODO — Debian Sway Install Suite
 
 Installation Debian opinionée, style Omarchy — Wayland-pur, APT only.
-Dernière mise à jour : 2026-05-19
+Dernière mise à jour : 2026-05-20
 
 ---
 
@@ -10,7 +10,8 @@ Dernière mise à jour : 2026-05-19
 | Script | État |
 |--------|------|
 | `debian-install-fresh.sh` | ✅ LUKS + Btrfs + debootstrap + install.conf (non-interactif) |
-| `scripts/install-sway.sh` | ✅ APT Debian Testing, zéro Sid requis |
+| `scripts/install-sway.sh` | ✅ APT Debian Testing, zéro Sid requis — inclut plymouth |
+| `scripts/chroot-postinstall.sh` | ✅ 8 étapes complètes — APT hook + auto-updates + Plymouth |
 | `scripts/setup-sway-config.sh` | ✅ Config modulaire complète |
 | `scripts/theme-picker.sh` | ✅ Refactorisé — templates envsubst + fichiers theme |
 | `scripts/verify-install.sh` | ✅ Diagnostic PASS/FAIL |
@@ -24,6 +25,8 @@ Dernière mise à jour : 2026-05-19
 - [x] `postinstall-sway.sh` — numérotation corrigée "X/9", message "Debian Stable" → "Debian Testing"
 - [x] `install-sway.sh` + `install-extras-sway.sh` — doublon Zen browser supprimé de install-sway.sh
 - [x] `screensaver-launch.sh` — remplacé `foot` par `kitty --class screensaver`
+- [x] `chroot-postinstall.sh` — auto-updates et Plymouth absents du flux d'install automatisé
+- [x] `setup-auto-updates.sh` — waybar-signal-updates : stdout non redirigé (`>/dev/null 2>&1`), doublon `check-updates.sh` supprimé
 
 ### Wishlist / Futur
 
@@ -56,6 +59,7 @@ Dernière mise à jour : 2026-05-19
 - [x] Slack webapp — Chromium + profil dédié `~/.config/chromium-slack` + icône + `.desktop`
 - [x] `configs/hypr/hyprlock.conf` — Ajout du fichier manquant (fix critique setup-sway-config.sh)
 - [x] APT hooks — Fix exit codes pour APT 3.0 (`exit 0` explicite, `Post-Invoke-Success` → `Post-Invoke`)
+- [x] Vestiges Hyprland — `WAYLAND_PURE.md` archivé dans `docs/legacy/`, `setup-updates.sh` supprimé, commentaire `kanshi/config` corrigé
 
 ---
 
