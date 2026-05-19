@@ -84,6 +84,13 @@ mkdir -p "$HOME/.config/kanshi"
 cp "$CONFIGS_DIR/kanshi/config" "$HOME/.config/kanshi/config"
 echo -e "${GREEN}Installed: ~/.config/kanshi/config${NC}"
 
+# Install XDG portal config (file picker → gtk, screenshot → wlr)
+echo ""
+echo "Installing XDG portal configuration..."
+mkdir -p "$HOME/.config/xdg-desktop-portal"
+cp "$CONFIGS_DIR/xdg-desktop-portal/portals.conf" "$HOME/.config/xdg-desktop-portal/portals.conf"
+echo -e "${GREEN}Installed: ~/.config/xdg-desktop-portal/portals.conf${NC}"
+
 # Install screensaver config
 echo ""
 echo "Installing screensaver configuration..."

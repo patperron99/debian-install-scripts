@@ -46,6 +46,9 @@ declare -a PACKAGES=(
   "slurp"
   "wf-recorder"
 
+  # XDG portals (file picker + screenshot)
+  "xdg-desktop-portal-gtk"
+
   # Clipboard
   "wl-clipboard"
   "cliphist"
