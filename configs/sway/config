@@ -70,7 +70,7 @@ exec swayidle -w \
 for_window [app_id="org.gnome.Calculator"] floating enable
 for_window [app_id="org.gnome.DiskUtility"] floating enable
 for_window [app_id="pavucontrol"] floating enable
-for_window [app_id="blueman-manager"] floating enable
+for_window [app_id="bluetooth"] floating enable
 for_window [app_id="kitty"] opacity 0.97
 for_window [app_id="org.gnome.Nautilus"] opacity 0.95
 for_window [app_id="screensaver"] fullscreen enable, border none
