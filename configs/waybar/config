@@ -56,7 +56,7 @@
     "tooltip-format": "Volume: {volume}%",
     "tooltip-format-bluetooth": "Volume: {volume}%",
     "scroll-step": 1,
-    "on-click": "pavucontrol",
+    "on-click": "kitty --class pulsemixer pulsemixer",
     "ignored-sinks": ["Easy Effects Sink"]
   },
 
