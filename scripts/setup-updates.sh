@@ -119,7 +119,7 @@ HELPEREOF
     "return-type": "json",
     "interval": 3600,
     "format": "{}",
-    "on-click": "alacritty -e bash -c 'sudo apt update && sudo apt upgrade; read -rp \\"Press Enter to close...\\"'",
+    "on-click": "kitty bash -c 'sudo apt update && sudo apt upgrade; read -rp \\"Press Enter to close...\\"'",
     "tooltip": true
 }
 EOF

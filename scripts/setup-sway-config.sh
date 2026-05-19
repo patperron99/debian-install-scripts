@@ -110,20 +110,13 @@ cp "$CONFIGS_DIR/wofi/config"     "$HOME/.config/wofi/config"
 cp "$CONFIGS_DIR/wofi/style.css"  "$HOME/.config/wofi/style.css"
 echo -e "${GREEN}Installed: ~/.config/wofi/${NC}"
 
-# Install Alacritty terminal config
-echo ""
-echo "Installing Alacritty configuration..."
-mkdir -p "$HOME/.config/alacritty/themes"
-cp "$CONFIGS_DIR/alacritty/alacritty.toml"  "$HOME/.config/alacritty/alacritty.toml"
-cp "$CONFIGS_DIR/alacritty/themes/"*        "$HOME/.config/alacritty/themes/"
-echo -e "${GREEN}Installed: ~/.config/alacritty/${NC}"
-
 # Install Kitty terminal config
 echo ""
 echo "Installing Kitty configuration..."
-mkdir -p "$HOME/.config/kitty"
+mkdir -p "$HOME/.config/kitty/themes"
 cp "$CONFIGS_DIR/kitty/kitty.conf"           "$HOME/.config/kitty/kitty.conf"
 cp "$CONFIGS_DIR/kitty/current-theme.conf"   "$HOME/.config/kitty/current-theme.conf"
+cp "$CONFIGS_DIR/kitty/themes/"*.conf        "$HOME/.config/kitty/themes/"
 echo -e "${GREEN}Installed: ~/.config/kitty/${NC}"
 
 # Install Tmux config
@@ -162,6 +155,24 @@ echo "Installing desktop entries..."
 mkdir -p "$HOME/.local/share/applications"
 cp "$CONFIGS_DIR/applications/"*.desktop "$HOME/.local/share/applications/"
 echo -e "${GREEN}Installed: ~/.local/share/applications/${NC}"
+
+# Download Slack icon (needed for the webapp .desktop entry)
+echo ""
+echo "Installing Slack icon..."
+SLACK_ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
+mkdir -p "$SLACK_ICON_DIR"
+if [ ! -f "$SLACK_ICON_DIR/slack.png" ]; then
+    if curl -fsSL --connect-timeout 10 --max-time 30 \
+        -o "$SLACK_ICON_DIR/slack.png" \
+        "https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png" 2>/dev/null; then
+        echo -e "${GREEN}✓ Slack icon installed${NC}"
+    else
+        echo -e "${YELLOW}Could not download Slack icon (skipping)${NC}"
+    fi
+    gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+else
+    echo -e "${GREEN}Slack icon already present${NC}"
+fi
 
 # Install .bashrc
 echo ""
@@ -220,7 +231,6 @@ echo "  - ~/.config/mako/config        (notification daemon)"
 echo "  - ~/.config/kanshi/config      (multi-monitor profiles)"
 echo "  - ~/.config/waybar/            (status bar)"
 echo "  - ~/.config/wofi/              (app launcher)"
-echo "  - ~/.config/alacritty/         (terminal)"
 echo "  - ~/.config/kitty/             (terminal)"
 echo "  - ~/.config/tmux/              (multiplexer + theme.tmpl)"
 echo "  - ~/.config/themes/            (per-theme color variables)"

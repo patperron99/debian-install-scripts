@@ -1,7 +1,7 @@
 # Sway Configuration
 
 set $mod Mod4
-set $term alacritty
+set $term kitty
 set $menu wofi --show drun
 
 # ── Environment ───────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ for_window [app_id="org.gnome.Calculator"] floating enable
 for_window [app_id="org.gnome.DiskUtility"] floating enable
 for_window [app_id="pavucontrol"] floating enable
 for_window [app_id="blueman-manager"] floating enable
-for_window [app_id="Alacritty"] opacity 0.97
+for_window [app_id="kitty"] opacity 0.97
 for_window [app_id="org.gnome.Nautilus"] opacity 0.95
 for_window [app_id="screensaver"] fullscreen enable, border none
 
@@ -83,7 +83,7 @@ bindsym $mod+d exec $menu
 bindsym $mod+e exec nautilus
 bindsym $mod+b exec flatpak run app.zen_browser.zen
 bindsym $mod+shift+a exec pavucontrol
-bindsym $mod+Shift+s exec chromium --app=https://app.slack.com/client --class=Slack
+bindsym $mod+Shift+s exec chromium --app=https://app.slack.com/client --user-data-dir=$HOME/.config/chromium-slack --class=Slack
 
 # Window management
 bindsym $mod+q kill

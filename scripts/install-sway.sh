@@ -75,7 +75,7 @@ declare -a PACKAGES=(
   "fonts-jetbrains-mono"
 
   # Terminal
-  "alacritty"
+  "kitty"
 
   # Power management
   "power-profiles-daemon"
@@ -99,6 +99,9 @@ declare -a PACKAGES=(
   "fzf"
   "avahi-daemon"
   "python3-pipx"
+
+  # Chromium (Slack webapp)
+  "chromium"
 
   # Flatpak (for Zen browser)
   "flatpak"
@@ -173,7 +176,7 @@ echo "Setting up Sway configuration directories..."
 mkdir -p "$INSTALL_HOME/.config/sway"
 mkdir -p "$INSTALL_HOME/.config/waybar"
 mkdir -p "$INSTALL_HOME/.config/mako"
-mkdir -p "$INSTALL_HOME/.config/alacritty"
+mkdir -p "$INSTALL_HOME/.config/kitty"
 chown -R "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.config"
 
 echo ""

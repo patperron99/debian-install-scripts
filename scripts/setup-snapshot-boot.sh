@@ -90,9 +90,10 @@ if [ -f /usr/local/bin/snapper-apt-post ]; then
 #!/bin/sh
 [ -x /usr/bin/snapper ] || exit 0
 PRE=$(cat /run/snapper-apt-pre-number 2>/dev/null) || exit 0
-snapper -c root create --type post --cleanup-algorithm number --pre-number "$PRE" --description "apt"
+snapper -c root create --type post --cleanup-algorithm number --pre-number "$PRE" --description "apt" || true
 rm -f /run/snapper-apt-pre-number
 update-grub 2>/dev/null || true
+exit 0
 SCRIPT
         sudo chmod +x /usr/local/bin/snapper-apt-post
         echo -e "${GREEN}Updated: /usr/local/bin/snapper-apt-post (now regenerates GRUB)${NC}"

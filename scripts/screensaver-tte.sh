@@ -1,5 +1,5 @@
 #!/bin/bash
-# screensaver-tte.sh — TTE animation loop, launched inside alacritty by screensaver-launch.sh
+# screensaver-tte.sh — TTE animation loop, launched inside kitty by screensaver-launch.sh
 
 export PATH="$HOME/.local/bin:$PATH"
 

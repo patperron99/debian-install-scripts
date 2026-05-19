@@ -51,10 +51,10 @@ apply_gtk_theme() {
         gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" 2>/dev/null || true
 }
 
-# ── Alacritty theme ──────────────────────────────────────────────────────────
-apply_alacritty_theme() {
-    local src="$HOME/.config/alacritty/themes/${ALACRITTY_SLUG}.toml"
-    local dst="$HOME/.config/alacritty/themes/current-theme.toml"
+# ── Kitty theme ──────────────────────────────────────────────────────────────
+apply_kitty_theme() {
+    local src="$HOME/.config/kitty/themes/${SLUG}.conf"
+    local dst="$HOME/.config/kitty/current-theme.conf"
     [ -f "$src" ] && cp "$src" "$dst"
 }
 
@@ -162,7 +162,7 @@ set +a
 
 apply_sway_theme
 apply_gtk_theme
-apply_alacritty_theme
+apply_kitty_theme
 apply_waybar_theme
 apply_mako_theme
 apply_tmux_theme

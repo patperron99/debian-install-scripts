@@ -105,7 +105,7 @@ check-updates.sh   # Waybar module   — APT + Flatpak update count
 | `configs/wofi/` | `~/.config/wofi/` | App launcher |
 | `configs/mako/` | `~/.config/mako/` | Notification daemon |
 | `configs/kanshi/` | `~/.config/kanshi/` | Multi-monitor profiles |
-| `configs/alacritty/` | `~/.config/alacritty/` | Terminal (+ themes) |
+| `configs/kitty/` | `~/.config/kitty/` | Terminal (+ themes) |
 | `configs/tmux/` | `~/.config/tmux/` | Multiplexer (Nord + TPM) |
 | `configs/bashrc/` | `~/.bashrc` | Shell (Nord prompt, aliases) |
 | `configs/nvim/` | `~/.config/nvim/` | Neovim — LazyVim + Nord |
@@ -153,7 +153,7 @@ bash postinstall-sway.sh
 
 Installs the full Sway ecosystem from APT Testing.
 
-**Packages:** sway, swaybg, swayidle, waybar, wofi, mako-notifier, grim, slurp, wf-recorder, alacritty, pipewire, wireplumber, pulsemixer, kanshi, udiskie, brightnessctl, playerctl, iwd, bluez, and more.
+**Packages:** sway, swaybg, swayidle, waybar, wofi, mako-notifier, grim, slurp, wf-recorder, kitty, pipewire, wireplumber, pulsemixer, kanshi, udiskie, brightnessctl, playerctl, iwd, bluez, and more.
 
 ```bash
 bash scripts/install-sway.sh

@@ -56,13 +56,14 @@ echo "Installing APT hook to refresh Waybar on package changes..."
 
 sudo tee /usr/local/bin/waybar-signal-updates > /dev/null << 'SCRIPT'
 #!/bin/sh
-pkill -RTMIN+8 waybar 2>/dev/null || true
+pkill -RTMIN+8 waybar 2>/dev/null
+exit 0
 SCRIPT
 sudo chmod +x /usr/local/bin/waybar-signal-updates
 
 sudo tee /etc/apt/apt.conf.d/81waybar-updates > /dev/null << 'EOF'
-APT::Update::Post-Invoke-Success { "/usr/local/bin/waybar-signal-updates"; };
-DPkg::Post-Invoke { "/usr/local/bin/waybar-signal-updates"; };
+APT::Update::Post-Invoke { "sh -c '/usr/local/bin/waybar-signal-updates || true'"; };
+DPkg::Post-Invoke { "sh -c '/usr/local/bin/waybar-signal-updates || true'"; };
 EOF
 
 echo -e "${GREEN}Installed: /etc/apt/apt.conf.d/81waybar-updates${NC}"

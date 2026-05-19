@@ -25,7 +25,7 @@ REQUIRED_BINS=(
     "waybar:waybar"
     "mako:mako-notifier"
     "wofi:wofi"
-    "alacritty:alacritty"
+    "kitty:kitty"
     "grim:grim"
     "slurp:slurp"
     "wl-copy:wl-clipboard"

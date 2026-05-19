@@ -100,8 +100,9 @@ echo "Installing APT snapshot hooks..."
 sudo tee /usr/local/bin/snapper-apt-pre > /dev/null << 'SCRIPT'
 #!/bin/sh
 [ -x /usr/bin/snapper ] || exit 0
-NUM=$(snapper -c root create --type pre --cleanup-algorithm number --print-number --description "apt")
+NUM=$(snapper -c root create --type pre --cleanup-algorithm number --print-number --description "apt" 2>/dev/null) || true
 echo "$NUM" > /run/snapper-apt-pre-number
+exit 0
 SCRIPT
 sudo chmod +x /usr/local/bin/snapper-apt-pre
 
@@ -109,15 +110,17 @@ sudo tee /usr/local/bin/snapper-apt-post > /dev/null << 'SCRIPT'
 #!/bin/sh
 [ -x /usr/bin/snapper ] || exit 0
 PRE=$(cat /run/snapper-apt-pre-number 2>/dev/null) || exit 0
-snapper -c root create --type post --cleanup-algorithm number --pre-number "$PRE" --description "apt"
+snapper -c root create --type post --cleanup-algorithm number --pre-number "$PRE" --description "apt" || true
 rm -f /run/snapper-apt-pre-number
+update-grub 2>/dev/null || true
+exit 0
 SCRIPT
 sudo chmod +x /usr/local/bin/snapper-apt-post
 
-# APT config — calls the scripts, no inline shell substitution
+# APT config — calls the scripts directly (no inline shell, exit 0 is in the scripts)
 sudo tee /etc/apt/apt.conf.d/80snapper > /dev/null << 'EOF'
-DPkg::Pre-Invoke  { "/usr/local/bin/snapper-apt-pre || true"; };
-DPkg::Post-Invoke { "/usr/local/bin/snapper-apt-post || true"; };
+DPkg::Pre-Invoke  { "/usr/local/bin/snapper-apt-pre"; };
+DPkg::Post-Invoke { "/usr/local/bin/snapper-apt-post"; };
 EOF
 
 echo -e "${GREEN}Installed: /etc/apt/apt.conf.d/80snapper${NC}"

@@ -86,7 +86,7 @@ Dernière mise à jour : Mai 2026
 
 | Package | Version | Notes |
 |---------|---------|-------|
-| alacritty | ✅ | GPU-accelerated terminal |
+| kitty | ✅ | GPU-accelerated terminal |
 | kitty | ✅ | GPU-accelerated terminal |
 | foot | ✅ | Lightweight terminal |
 
