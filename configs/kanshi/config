@@ -1,7 +1,7 @@
 # kanshi multi-monitor profiles
 # https://wayland.emersion.fr/kanshi/
 #
-# Run `hyprctl monitors` to get your monitor names
+# Run `swaymsg -t get_outputs` to get your monitor names
 # then add profiles below.
 #
 # Example — laptop standalone:
