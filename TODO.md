@@ -20,6 +20,21 @@ Dernière mise à jour : 2026-05-22
 
 ## En cours / À faire
 
+### Reprendre ici au prochain démarrage
+
+- [ ] **`systemd-resolved`** — inactif, causait échec DNS. Activer et fixer `resolv.conf` :
+  ```bash
+  sudo systemctl enable --now systemd-resolved
+  sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+  ```
+- [ ] **`xdg-desktop-portal-gtk`** — nécessaire pour file picker (pritunl import "i"). Installer après DNS fixé :
+  ```bash
+  sudo apt-get install -y xdg-desktop-portal-gtk
+  systemctl --user restart xdg-desktop-portal.service
+  ```
+- [ ] **`pritunl-client`** — tester import profil (touche "i") une fois portals installés
+- [ ] Ajouter `systemctl enable systemd-resolved` dans `install-sway.sh`
+
 ### Bugs connus
 
 - [x] `postinstall-sway.sh` — numérotation corrigée "X/9", message "Debian Stable" → "Debian Testing"
