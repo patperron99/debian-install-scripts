@@ -136,6 +136,35 @@ else
     fi
 fi
 
+# ─── PRITUNL CLIENT: VPN (GitHub .deb for Trixie) ────────────────────────────
+echo ""
+echo "Installing pritunl-client (VPN)..."
+PRITUNL_DEB=$(curl -sL https://api.github.com/repos/pritunl/pritunl-client-electron/releases/latest \
+    | python3 -c "
+import sys, json
+r = json.load(sys.stdin)
+url = next((a['browser_download_url'] for a in r['assets']
+            if 'pritunl-client_' in a['name'] and 'trixie_amd64.deb' in a['name']), '')
+print(url)
+" 2>/dev/null)
+
+if [ -n "$PRITUNL_DEB" ]; then
+    TMP_DEB=$(mktemp /tmp/pritunl-client-XXXXXX.deb)
+    if curl -fsSL --connect-timeout 15 --max-time 120 -o "$TMP_DEB" "$PRITUNL_DEB" 2>/dev/null; then
+        if dpkg -i "$TMP_DEB" 2>/dev/null; then
+            echo -e "${GREEN}✓ pritunl-client installed${NC}"
+        else
+            apt-get install -f -y 2>/dev/null || true
+            echo -e "${GREEN}✓ pritunl-client installed (with dependency fix)${NC}"
+        fi
+    else
+        echo -e "${YELLOW}Could not download pritunl-client (optional)${NC}"
+    fi
+    rm -f "$TMP_DEB"
+else
+    echo -e "${YELLOW}Could not fetch pritunl-client release URL (optional)${NC}"
+fi
+
 # ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────
 echo ""
 echo "Installing Tmux Plugin Manager (TPM)..."
