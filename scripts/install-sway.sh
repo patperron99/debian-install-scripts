@@ -166,12 +166,6 @@ sudo -u "$INSTALL_USER" pipx install terminaltexteffects
 echo -e "${GREEN}✓ terminaltexteffects installed${NC}"
 
 echo ""
-echo "Installing Zen browser via Flatpak..."
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak install -y flathub app.zen_browser.zen
-xdg-settings set default-web-browser app.zen_browser.zen.desktop
-
-echo ""
 echo "Setting up Sway configuration directories..."
 mkdir -p "$INSTALL_HOME/.config/sway"
 mkdir -p "$INSTALL_HOME/.config/waybar"

@@ -26,33 +26,33 @@ confirm_step() {
 
 # ─── STEPS ────────────────────────────────────────────────────────────────────
 step_packages() {
-    section "1/7 — Core + Sway packages"
+    section "1/9 — Core + Sway packages"
     bash scripts/install-sway.sh
 }
 
 step_configs() {
-    section "2/7 — Deploy configuration files"
+    section "2/9 — Deploy configuration files"
     bash scripts/setup-sway-config.sh
 }
 
 step_extras() {
-    section "3/7 — Extras (neovim, tmux, fonts, flatpak)"
+    section "3/9 — Extras (neovim, tmux, fonts, flatpak)"
     bash scripts/install-extras-sway.sh
 }
 
 step_theme() {
-    section "4/7 — Theme (GTK, cursor, Neovim)"
+    section "4/9 — Theme (GTK, cursor, Neovim)"
     bash scripts/setup-theme.sh
 }
 
 step_wallpaper() {
-    section "5/7 — Wallpapers"
+    section "5/9 — Wallpapers"
     bash scripts/fetch-wallpapers.sh
     bash scripts/setup-wallpaper.sh
 }
 
 step_updates() {
-    section "6/8 — Auto-update timer"
+    section "6/9 — Auto-update timer"
     bash scripts/setup-auto-updates.sh
 }
 
@@ -104,7 +104,7 @@ show_menu() {
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${YELLOW}Run from the repository root directory.${NC}"
-echo -e "${YELLOW}Requires Debian Stable. Testing sources added automatically for neovim and hyprlock.${NC}"
+echo -e "${YELLOW}Requires Debian Testing (Forky). Run from the cloned repository root.${NC}"
 
 while true; do
     show_menu
