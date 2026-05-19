@@ -22,4 +22,8 @@ install.conf
 
 # Build directories
 build/
-.local/src/hyprland-build/
+
+# Node (accidentally created)
+node_modules/
+package.json
+package-lock.json
