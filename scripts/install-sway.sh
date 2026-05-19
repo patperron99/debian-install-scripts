@@ -80,6 +80,10 @@ declare -a PACKAGES=(
   # Power management
   "power-profiles-daemon"
 
+  # Boot splash
+  "plymouth"
+  "plymouth-themes"
+
   # System utilities
   "brightnessctl"
   "playerctl"

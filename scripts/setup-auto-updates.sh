@@ -13,42 +13,7 @@ echo "Configures APT list refresh (system) + Waybar update count (user)."
 echo "No automatic installation — updates are always interactive."
 echo ""
 
-HELPER="$HOME/.local/bin/check-updates.sh"
 SYSTEMD_DIR="$HOME/.config/systemd/user"
-
-# --- UPDATE check-updates.sh TO INCLUDE FLATPAK ---
-echo "Installing updated check-updates.sh (APT + Flatpak)..."
-mkdir -p "$HOME/.local/bin"
-
-cat > "$HELPER" << 'HELPEREOF'
-#!/bin/bash
-# Waybar update module — emits JSON with APT + Flatpak update counts
-
-APT_OUTPUT=$(apt-get -s upgrade 2>/dev/null)
-APT_COUNT=$(echo "$APT_OUTPUT" | grep -c "^Inst") || APT_COUNT=0
-APT_SECURITY=$(echo "$APT_OUTPUT" | grep -c "^Inst.*security") || APT_SECURITY=0
-
-if command -v flatpak &>/dev/null; then
-    FLATPAK_COUNT=$(flatpak remote-ls --updates 2>/dev/null | wc -l) || FLATPAK_COUNT=0
-else
-    FLATPAK_COUNT=0
-fi
-
-TOTAL=$((APT_COUNT + FLATPAK_COUNT))
-
-if [ "$TOTAL" -eq 0 ]; then
-    echo '{"text":" ","tooltip":"System up to date","class":"updated"}'
-else
-    TOOLTIP="${APT_COUNT} APT"
-    [ "$APT_SECURITY" -gt 0 ] && TOOLTIP+=" (${APT_SECURITY} security)"
-    [ "$FLATPAK_COUNT" -gt 0 ] && TOOLTIP+=", ${FLATPAK_COUNT} Flatpak"
-    TOOLTIP+=" updates available"
-    echo "{\"text\":\" ${TOTAL}\",\"tooltip\":\"${TOOLTIP}\",\"class\":\"updates-available\"}"
-fi
-HELPEREOF
-
-chmod +x "$HELPER"
-echo -e "${GREEN}Updated: $HELPER${NC}"
 
 # --- APT HOOK: signal Waybar after apt update / dpkg operations ---
 echo ""
@@ -56,7 +21,7 @@ echo "Installing APT hook to refresh Waybar on package changes..."
 
 sudo tee /usr/local/bin/waybar-signal-updates > /dev/null << 'SCRIPT'
 #!/bin/sh
-pkill -RTMIN+8 waybar 2>/dev/null
+pkill -RTMIN+8 waybar >/dev/null 2>&1
 exit 0
 SCRIPT
 sudo chmod +x /usr/local/bin/waybar-signal-updates

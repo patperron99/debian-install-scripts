@@ -23,54 +23,90 @@ section() {
 }
 
 # Step 1: Core Sway packages (apt as root — no sudo needed in chroot)
-section "1/6 — Core + Sway packages"
+section "1/8 — Core + Sway packages"
 bash "$SCRIPTS_DIR/install-sway.sh" "$USERNAME"
 
 # Step 2: Configuration files (user context — runuser sets HOME correctly)
-section "2/6 — Deploy configuration files"
+section "2/8 — Deploy configuration files"
 runuser -l "$USERNAME" -c "cd '$REPO_DIR' && NONINTERACTIVE=1 bash '$SCRIPTS_DIR/setup-sway-config.sh'"
 
 # Step 3: Extras — dev tools, nerd fonts, TPM (mixed root/user)
-section "3/6 — Extras (neovim, tmux, fonts, flatpak)"
+section "3/8 — Extras (neovim, tmux, fonts, flatpak)"
 bash "$SCRIPTS_DIR/install-extras-sway.sh" "$USERNAME"
 
 # Step 4: Theme — GTK, icons, cursor, Neovim (interactive, user context)
-section "4/6 — Theme (GTK, icons, cursor, Neovim)"
+section "4/8 — Theme (GTK, icons, cursor, Neovim)"
 runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/setup-theme.sh'"
 
 # Step 5: Lock screen config (hyprlock — config deployed with sway configs)
-section "5/6 — Lock screen (hyprlock)"
+section "5/8 — Lock screen (hyprlock)"
 echo "hyprlock config installed to ~/.config/hypr/hyprlock.conf via setup-sway-config.sh"
 echo "swayidle runs as part of the Sway autostart in ~/.config/sway/config"
 
 # Step 6: Wallpapers — download only; interactive selection deferred
-section "6/6 — Wallpapers (download)"
+section "6/8 — Wallpapers (download)"
 runuser -l "$USERNAME" -c "cd '$REPO_DIR' && bash '$SCRIPTS_DIR/fetch-wallpapers.sh'" || true
 echo -e "${YELLOW}[DEFERRED] Interactive wallpaper selection requires a running Wayland session.${NC}"
 echo "  After first login: bash $SCRIPTS_DIR/setup-wallpaper.sh"
 
-# ─── Systemd user units: write to disk now, enable at first login ─────────────
-section "Systemd user timer (written to disk)"
+# ─── Step 7/8: APT hook + system refresh timer ────────────────────────────────
+section "7/8 — APT hook + auto-update timer"
 
-USER_SYSTEMD_DIR="$INSTALL_HOME/.config/systemd/user"
-mkdir -p "$USER_SYSTEMD_DIR"
+cat > /usr/local/bin/waybar-signal-updates << 'APTHOOKEOF'
+#!/bin/sh
+pkill -RTMIN+8 waybar >/dev/null 2>&1
+exit 0
+APTHOOKEOF
+chmod +x /usr/local/bin/waybar-signal-updates
 
-HELPER="$INSTALL_HOME/.local/bin/check-updates.sh"
+cat > /etc/apt/apt.conf.d/81waybar-updates << 'APTCONFEOF'
+APT::Update::Post-Invoke { "sh -c '/usr/local/bin/waybar-signal-updates || true'"; };
+DPkg::Post-Invoke { "sh -c '/usr/local/bin/waybar-signal-updates || true'"; };
+APTCONFEOF
 
-cat > "$USER_SYSTEMD_DIR/check-updates.service" << EOF
+cat > /etc/systemd/system/apt-refresh.service << 'APTSVCEOF'
 [Unit]
-Description=Check for APT and Flatpak updates (Waybar module)
+Description=Daily APT package list refresh
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=$HELPER
-EOF
+ExecStart=/usr/bin/apt-get update -qq
+APTSVCEOF
 
-cat > "$USER_SYSTEMD_DIR/check-updates.timer" << 'TIMEREOF'
+cat > /etc/systemd/system/apt-refresh.timer << 'APTTIMEREOF'
 [Unit]
-Description=Daily update check timer
+Description=Daily APT package list refresh
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+APTTIMEREOF
+
+systemctl enable apt-refresh.timer 2>/dev/null || true
+echo -e "${GREEN}APT hook + apt-refresh.timer configured${NC}"
+
+# ─── Systemd user units: write to disk now, enable at first login ─────────────
+USER_SYSTEMD_DIR="$INSTALL_HOME/.config/systemd/user"
+mkdir -p "$USER_SYSTEMD_DIR"
+
+cat > "$USER_SYSTEMD_DIR/check-updates.service" << 'USERSVCEOF'
+[Unit]
+Description=Refresh Waybar update count
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pkill -RTMIN+8 waybar
+USERSVCEOF
+
+cat > "$USER_SYSTEMD_DIR/check-updates.timer" << 'USERTIMEREOF'
+[Unit]
+Description=Periodic Waybar update count refresh
 
 [Timer]
 OnBootSec=5min
@@ -79,7 +115,7 @@ Persistent=true
 
 [Install]
 WantedBy=timers.target
-TIMEREOF
+USERTIMEREOF
 
 chown -R "$USERNAME:$USERNAME" "$USER_SYSTEMD_DIR"
 
@@ -99,6 +135,17 @@ fi
 FIRSTLOGINEOF
 
 chown "$USERNAME:$USERNAME" "$BASHRC"
+
+# ─── Step 8/8: Plymouth boot splash (non-interactive, default: spinner) ───────
+section "8/8 — Plymouth boot splash"
+
+plymouth-set-default-theme spinner 2>/dev/null || true
+if [ -f /etc/default/grub ] && ! grep -q "splash" /etc/default/grub; then
+    sed -i 's/\(GRUB_CMDLINE_LINUX_DEFAULT="[^"]*\)"/\1 quiet splash"/' /etc/default/grub
+fi
+update-initramfs -u -k all 2>/dev/null || true
+update-grub 2>/dev/null || true
+echo -e "${GREEN}Plymouth configured (theme: spinner — change with: sudo plymouth-set-default-theme -R <theme>)${NC}"
 
 # ─── Deferred steps ───────────────────────────────────────────────────────────
 echo ""
