@@ -105,23 +105,35 @@ runuser -l "$INSTALL_USER" -c "fc-cache -fv '$FONTS_DIR'" >/dev/null 2>&1 || \
     fc-cache -fv "$FONTS_DIR" >/dev/null 2>&1 || true
 echo -e "${GREEN}Nerd Fonts installed to $FONTS_DIR${NC}"
 
-# ─── BLUETUI: TUI Bluetooth Manager ───────────────────────────────────────────
+# ─── BLUETUI: TUI Bluetooth Manager (GitHub binary) ───────────────────────────
 echo ""
 echo "Installing bluetui (TUI Bluetooth manager)..."
-if command -v pip3 &>/dev/null; then
-    if sudo -u "$INSTALL_USER" pip3 install --user bluetui 2>/dev/null; then
-        echo -e "${GREEN}✓ bluetui installed${NC}"
-    else
-        echo -e "${YELLOW}Failed to install bluetui via pip3 — trying pip...${NC}"
-        if sudo -u "$INSTALL_USER" pip install --user bluetui 2>/dev/null; then
+BLUETUI_BIN="$INSTALL_HOME/.local/bin/bluetui"
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)  BLUETUI_ASSET="bluetui-x86_64-linux-musl" ;;
+    aarch64) BLUETUI_ASSET="bluetui-aarch64-linux-musl" ;;
+    *)       BLUETUI_ASSET="" ;;
+esac
+
+if [ -z "$BLUETUI_ASSET" ]; then
+    echo -e "${YELLOW}bluetui: unsupported architecture ($ARCH) — skipped${NC}"
+else
+    BLUETUI_URL=$(curl -s https://api.github.com/repos/pythops/bluetui/releases/latest \
+        | python3 -c "import sys,json; r=json.load(sys.stdin); \
+          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$BLUETUI_ASSET'))" 2>/dev/null)
+    if [ -n "$BLUETUI_URL" ]; then
+        mkdir -p "$INSTALL_HOME/.local/bin"
+        if curl -fsSL --connect-timeout 15 --max-time 60 -o "$BLUETUI_BIN" "$BLUETUI_URL" 2>/dev/null; then
+            chmod +x "$BLUETUI_BIN"
+            chown "$INSTALL_USER:$INSTALL_USER" "$BLUETUI_BIN"
             echo -e "${GREEN}✓ bluetui installed${NC}"
         else
-            echo -e "${YELLOW}Could not install bluetui (optional)${NC}"
-            echo "  Install manually: pip install --user bluetui"
+            echo -e "${YELLOW}Could not download bluetui (optional)${NC}"
         fi
+    else
+        echo -e "${YELLOW}Could not fetch bluetui release URL (optional)${NC}"
     fi
-else
-    echo -e "${YELLOW}pip3 not found — bluetui skipped${NC}"
 fi
 
 # ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────

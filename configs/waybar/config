@@ -168,7 +168,7 @@
     "format-icons": "",
 	  "format-connected": "{icon}",
 	  "format-connected-battery": "{icon}",
-	  "on-click": "blueman-manager",
+	  "on-click": "kitty --class bluetooth bluetui",
 	  // "format-device-preference": [ "device1", "device2" ], // preference list deciding the displayed device
 	  "tooltip-format": "{controller_alias}\t{controller_address}\n\n{num_connections} connected",
 	  "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n\n{device_enumerate}",

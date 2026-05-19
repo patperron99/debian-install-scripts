@@ -104,9 +104,6 @@ declare -a PACKAGES=(
   "avahi-daemon"
   "python3-pipx"
 
-  # Bluetooth manager
-  "blueman"
-
   # Chromium (Slack webapp)
   "chromium"
 
