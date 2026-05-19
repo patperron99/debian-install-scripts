@@ -10,5 +10,5 @@ if [ -n "$LINE" ]; then
     printf '{"text":"󱇱","tooltip":"%s\\n%s → %s\\nUptime: %s","class":"connected"}\n' \
         "$NAME" "$SERVER" "$CLIENT" "$UPTIME"
 else
-    printf '{"text":" ","tooltip":"VPN disconnected","class":"disconnected"}\n'
+    printf '{"text":"󱇱","tooltip":"VPN disconnected","class":"disconnected"}\n'
 fi
