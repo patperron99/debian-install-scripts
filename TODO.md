@@ -1,7 +1,7 @@
 # TODO — Debian Sway Install Suite
 
 Installation Debian opinionée, style Omarchy — Wayland-pur, APT only.
-Dernière mise à jour : 2026-05-20
+Dernière mise à jour : 2026-05-21
 
 ---
 
@@ -60,6 +60,7 @@ Dernière mise à jour : 2026-05-20
 - [x] `configs/hypr/hyprlock.conf` — Ajout du fichier manquant (fix critique setup-sway-config.sh)
 - [x] APT hooks — Fix exit codes pour APT 3.0 (`exit 0` explicite, `Post-Invoke-Success` → `Post-Invoke`)
 - [x] Vestiges Hyprland — `WAYLAND_PURE.md` archivé dans `docs/legacy/`, `setup-updates.sh` supprimé, commentaire `kanshi/config` corrigé
+- [x] Bluetooth — `bluetui` binaire GitHub (musl statique, x86_64/aarch64) remplace blueman + pip inexistant ; vérification de version dans `check-updates.sh`
 
 ---
 
@@ -71,4 +72,4 @@ Dernière mise à jour : 2026-05-20
 - `adwaita-qt` préféré à `kvantum` (moins de dépendances)
 - Nerd Fonts : télécharger archives ciblées (éviter `git clone` du repo entier ~5GB)
 - Slack : webapp Chromium (`--app=https://app.slack.com/client`), pas de tray icon possible sur Wayland
-- bluetui : installé via pip3 dans `install-extras-sway.sh` (pas dans APT)
+- bluetui : binaire musl statique depuis GitHub releases (pythops/bluetui) — pip inexistant, cargo évité (trop lourd)
