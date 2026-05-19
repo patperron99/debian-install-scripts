@@ -55,10 +55,12 @@ for output in "${OUTPUTS[@]}"; do
     FONT_SIZE=$(calc_font_size "$output")
 
     if [[ "$FONT_SIZE" -gt 0 ]]; then
-        foot -a screensaver --font="JetBrains Mono:size=${FONT_SIZE}" \
+        kitty --class screensaver \
+            --override "font_family=JetBrains Mono" \
+            --override "font_size=${FONT_SIZE}" \
             bash ~/.local/bin/screensaver-tte.sh &
     else
-        foot -a screensaver \
+        kitty --class screensaver \
             bash ~/.local/bin/screensaver-tte.sh &
     fi
 

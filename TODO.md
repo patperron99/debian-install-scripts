@@ -23,7 +23,7 @@ Dernière mise à jour : 2026-05-19
 
 - [ ] `postinstall-sway.sh` — numérotation incohérente : étapes 1–5 affichent "X/7" alors qu'il y a 9 étapes
 - [ ] `install-sway.sh` + `install-extras-sway.sh` — doublon Zen browser Flatpak (installé dans les deux)
-- [ ] `screensaver-launch.sh` — utilise `foot` qui n'est pas dans les packages installés par `install-sway.sh`
+- [x] `screensaver-launch.sh` — remplacé `foot` par `kitty --class screensaver`
 
 ### Wishlist / Futur
 
