@@ -1,7 +1,7 @@
 # TODO — Debian Sway Install Suite
 
 Installation Debian opinionée, style Omarchy — Wayland-pur, APT only.
-Dernière mise à jour : 2026-05-14
+Dernière mise à jour : 2026-05-19
 
 ---
 
@@ -19,51 +19,52 @@ Dernière mise à jour : 2026-05-14
 
 ## En cours / À faire
 
-### Scripts manquants
+### Bugs connus
+
+- [ ] `postinstall-sway.sh` — numérotation incohérente : étapes 1–5 affichent "X/7" alors qu'il y a 9 étapes
+- [ ] `install-sway.sh` + `install-extras-sway.sh` — doublon Zen browser Flatpak (installé dans les deux)
+- [ ] `screensaver-launch.sh` — utilise `foot` qui n'est pas dans les packages installés par `install-sway.sh`
+
+### Wishlist / Futur
+
+- [ ] Script détection GPU (Intel/AMD/NVIDIA) → env vars au boot
+- [ ] Test XDG portals (screenshot + file picker)
+- [ ] Revue permissions sandbox Flatpak
+
+---
+
+## Complété
+
+### Scripts
 
 - [x] `scripts/setup-snapshots.sh` — Configure snapper + hooks APT pre/post + timers systemd
 - [x] `scripts/setup-auto-updates.sh` — Timer systemd user pour vérification quotidienne (APT + Flatpak)
 - [x] `scripts/setup-multimonitor.sh` — Config interactive workspaces par moniteur via `kanshi`
 - [x] `scripts/fetch-wallpapers.sh` — Télécharge wallpapers curatés libres de droits par thème
+- [x] `scripts/setup-plymouth.sh` — Splash screen boot + thème interactif
+- [x] `scripts/setup-snapshot-boot.sh` — Menu GRUB snapshots + `restore-snapshot`
+- [x] `scripts/fix-apt-hooks.sh` — Correctif APT hooks pour systèmes existants (APT 3.0)
 
-### Améliorations en attente
+### Fonctionnalités
 
-- [x] `debian-install-fresh.sh` — Installation non-interactive via `install.conf` :
-  - `install.conf.example` versionné, `install.conf` gitignored
-  - Passwords collectés une seule fois en début de script, passés au chroot via fichier secrets (shredé après usage)
-  - Locale/timezone/hostname/username non-interactifs dans `chroot_setup.sh`
-  - `setup-sway-config.sh` skippable via `NONINTERACTIVE=1`
-
-- [x] Nerd Fonts — Remplacer `git clone` (5GB) par téléchargement ciblé `.tar.xz`
-  - JetBrainsMono + FiraCode + Hack depuis GitHub releases (v3.2.1)
-  - Installer dans `~/.local/share/fonts/NerdFonts` + `fc-cache -fv` (dans install-extras-sway.sh)
-
-- [x] Waybar — module `custom/updates` : compte APT + Flatpak, clic → terminal upgrade
-  - APT hook `81waybar-updates` signale Waybar après `apt update` / dpkg
-  - Timer système `apt-refresh.timer` fait `apt-get update` quotidien (root)
-
-- [x] Plymouth — configurer splash screen au boot + thème par défaut
-
-- [x] Power menu — option "Screensaver" ajoutée (`powermenu.sh`, lié à `screensaver-launch.sh`)
-
-- [x] Restauration snapshot au boot — grub-btrfs (menu GRUB) + `restore-snapshot` (swap subvolume @)
+- [x] `debian-install-fresh.sh` — Installation non-interactive via `install.conf`
+- [x] Nerd Fonts — Téléchargement ciblé `.tar.xz` (JetBrainsMono, FiraCode, Hack v3.2.1)
+- [x] Waybar `custom/updates` — Compte APT + Flatpak, clic → terminal upgrade
+- [x] Power menu — Option "Screensaver" (`powermenu.sh` + `screensaver-launch.sh`)
+- [x] Restauration snapshot au boot — Menu GRUB + swap subvolume `@`
+- [x] Terminal — Alacritty remplacé par Kitty (5 thèmes: gruvbox, nord, catppuccin-mocha, tokyo-night, rose-pine)
+- [x] Slack webapp — Chromium + profil dédié `~/.config/chromium-slack` + icône + `.desktop`
+- [x] `configs/hypr/hyprlock.conf` — Ajout du fichier manquant (fix critique setup-sway-config.sh)
+- [x] APT hooks — Fix exit codes pour APT 3.0 (`exit 0` explicite, `Post-Invoke-Success` → `Post-Invoke`)
 
 ---
 
-## Problèmes connus / Décisions
+## Décisions
 
 - Migration Hyprland → Sway complète (branch `sway`) — Debian Testing pur, zéro Sid
 - `greetd` remplacé par `agetty` autologin (plus simple, moins de dépendances)
 - `swww` absent d'APT — `swaybg` utilisé à la place (stable, Wayland-natif)
 - `adwaita-qt` préféré à `kvantum` (moins de dépendances)
-- Nerd Fonts : éviter `git clone` du repo entier (~5GB) — télécharger archives ciblées
+- Nerd Fonts : télécharger archives ciblées (éviter `git clone` du repo entier ~5GB)
 - Slack : webapp Chromium (`--app=https://app.slack.com/client`), pas de tray icon possible sur Wayland
-
----
-
-## Wishlist / Futur
-
-- [ ] Script détection GPU (Intel/AMD/NVIDIA) → env vars au boot
-- [ ] bluetui — TUI bluetooth (Rust, pas dans APT)
-- [ ] Test XDG portals (screenshot + file picker)
-- [ ] Revue permissions sandbox Flatpak
+- bluetui : installé via pip3 dans `install-extras-sway.sh` (pas dans APT)
