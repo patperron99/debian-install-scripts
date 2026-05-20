@@ -39,6 +39,7 @@ Dernière mise à jour : 2026-05-22
 - [ ] Script détection GPU (Intel/AMD/NVIDIA) → env vars au boot
 - [ ] Test XDG portals (screenshot + file picker)
 - [ ] Revue permissions sandbox Flatpak
+- [ ] Migrer WiFi de NetworkManager → iwd (requis pour impala) — faire en filaire, désactiver NM, configurer iwd, tester reconnexion
 
 ---
 
