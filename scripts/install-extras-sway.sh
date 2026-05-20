@@ -199,6 +199,43 @@ else
     echo -e "${YELLOW}Could not fetch pritunl-client release URL (optional)${NC}"
 fi
 
+# ─── YAZI: Terminal File Manager (GitHub binary) ─────────────────────────────
+echo ""
+echo "Installing yazi (terminal file manager)..."
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)  YAZI_ASSET="yazi-x86_64-unknown-linux-musl.zip" ;;
+    aarch64) YAZI_ASSET="yazi-aarch64-unknown-linux-musl.zip" ;;
+    *)       YAZI_ASSET="" ;;
+esac
+
+if [ -z "$YAZI_ASSET" ]; then
+    echo -e "${YELLOW}yazi: unsupported architecture ($ARCH) — skipped${NC}"
+else
+    YAZI_URL=$(curl -s https://api.github.com/repos/sxyazi/yazi/releases/latest \
+        | python3 -c "import sys,json; r=json.load(sys.stdin); \
+          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$YAZI_ASSET'))" 2>/dev/null)
+    if [ -n "$YAZI_URL" ]; then
+        TMP_ZIP=$(mktemp /tmp/yazi-XXXXXX.zip)
+        TMP_DIR=$(mktemp -d)
+        if curl -fsSL --connect-timeout 15 --max-time 120 -o "$TMP_ZIP" "$YAZI_URL" 2>/dev/null; then
+            if unzip -o "$TMP_ZIP" "*/yazi" -d "$TMP_DIR" 2>/dev/null; then
+                YAZI_BIN=$(find "$TMP_DIR" -name "yazi" -type f | head -1)
+                mkdir -p "$INSTALL_HOME/.local/bin"
+                cp "$YAZI_BIN" "$INSTALL_HOME/.local/bin/yazi"
+                chmod +x "$INSTALL_HOME/.local/bin/yazi"
+                chown "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.local/bin/yazi"
+                echo -e "${GREEN}✓ yazi installed${NC}"
+            fi
+        else
+            echo -e "${YELLOW}Could not download yazi (optional)${NC}"
+        fi
+        rm -f "$TMP_ZIP" && rm -rf "$TMP_DIR"
+    else
+        echo -e "${YELLOW}Could not fetch yazi release URL (optional)${NC}"
+    fi
+fi
+
 # ─── SUPERFILE: Terminal File Manager (GitHub binary) ────────────────────────
 echo ""
 echo "Installing superfile (spf)..."
