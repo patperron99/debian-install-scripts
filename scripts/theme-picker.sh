@@ -70,9 +70,7 @@ apply_waybar_theme() {
 # ── Mako notification config (from template) ─────────────────────────────────
 apply_mako_theme() {
     envsubst < "$MAKO_TMPL" > "$HOME/.config/mako/config"
-    pkill -x mako 2>/dev/null || true
-    sleep 0.2
-    setsid mako >/dev/null 2>&1 &
+    makoctl reload 2>/dev/null || true
 }
 
 # ── Tmux powerline theme (from template) ─────────────────────────────────────
