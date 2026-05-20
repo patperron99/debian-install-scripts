@@ -3,11 +3,10 @@
   "position": "top",
   "height": 36,
   "modules-left": ["sway/workspaces", "sway/window"],
-  "modules-center": ["clock"],
+  "modules-center": ["clock", "custom/updates"],
   "modules-right": [
     "idle_inhibitor",
     "custom/powerprofile",
-    "custom/updates",
     "pulseaudio",
     "cpu",
     "memory",

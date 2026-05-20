@@ -62,7 +62,7 @@ while true; do
     ( IFS= read -r -s -n1 _ </dev/tty 2>/dev/null; kill -USR1 "$SELF" 2>/dev/null ) &
     WATCH_PID=$!
 
-    gen_content | tte --random-effect --canvas-width 0 --canvas-height 0 --anchor-canvas c 2>/dev/null &
+    gen_content | tte --random-effect --canvas-width 0 --canvas-height 0 --anchor-canvas c --anchor-text c 2>/dev/null &
     TTE_PID=$!
 
     wait "$TTE_PID"
