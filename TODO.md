@@ -22,14 +22,9 @@ Dernière mise à jour : 2026-05-22
 
 ### Reprendre ici au prochain démarrage
 
-- [ ] **`systemd-resolved`** — inactif, causait échec DNS. Activer et fixer `resolv.conf` :
-  ```bash
-  sudo systemctl enable --now systemd-resolved
-  sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-  ```
 - [x] **`xdg-desktop-portal-gtk`** — installé
 - [x] **`pritunl-client`** — import via CLI : `pritunl-client add /chemin/profil.tar` (touche "i" du TUI ne fonctionne pas, abandonné)
-- [ ] Ajouter `systemctl enable systemd-resolved` dans `install-sway.sh`
+- [x] **DNS** — `resolvconf` utilisé à la place de `systemd-resolved` (non installé), fonctionne
 
 ### Bugs connus
 
