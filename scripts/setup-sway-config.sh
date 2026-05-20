@@ -135,15 +135,6 @@ cp "$CONFIGS_DIR/tmux/theme.conf"  "$HOME/.config/tmux/theme.conf"
 cp "$CONFIGS_DIR/tmux/theme.tmpl"  "$HOME/.config/tmux/theme.tmpl"
 echo -e "${GREEN}Installed: ~/.config/tmux/${NC}"
 
-# Install lf config
-echo ""
-echo "Installing lf config..."
-mkdir -p "$HOME/.config/lf"
-cp "$CONFIGS_DIR/lf/lfrc"      "$HOME/.config/lf/lfrc"
-cp "$CONFIGS_DIR/lf/previewer" "$HOME/.config/lf/previewer"
-cp "$CONFIGS_DIR/lf/cleaner"   "$HOME/.config/lf/cleaner"
-chmod +x "$HOME/.config/lf/previewer" "$HOME/.config/lf/cleaner"
-echo -e "${GREEN}Installed: ~/.config/lf/${NC}"
 
 # Install theme variable files
 echo ""

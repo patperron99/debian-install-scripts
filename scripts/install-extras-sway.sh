@@ -28,8 +28,7 @@ declare -a EXTRA_PACKAGES=(
     "psmisc"
     "jq"
     "fastfetch"
-    # lf file manager + preview deps
-    "lf"
+    # file manager + preview deps
     "bat"
     "ffmpegthumbnailer"
     "poppler-utils"
@@ -168,6 +167,43 @@ if [ -n "$PRITUNL_DEB" ]; then
     rm -f "$TMP_DEB"
 else
     echo -e "${YELLOW}Could not fetch pritunl-client release URL (optional)${NC}"
+fi
+
+# ─── SUPERFILE: Terminal File Manager (GitHub binary) ────────────────────────
+echo ""
+echo "Installing superfile (spf)..."
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)  SPF_ARCH="amd64" ;;
+    aarch64) SPF_ARCH="arm64" ;;
+    *)       SPF_ARCH="" ;;
+esac
+
+if [ -z "$SPF_ARCH" ]; then
+    echo -e "${YELLOW}superfile: unsupported architecture ($ARCH) — skipped${NC}"
+else
+    SPF_URL=$(curl -s https://api.github.com/repos/yorukot/superfile/releases/latest \
+        | python3 -c "import sys,json; r=json.load(sys.stdin); \
+          print(next(a['browser_download_url'] for a in r['assets'] \
+          if 'linux' in a['name'] and '$SPF_ARCH' in a['name']))" 2>/dev/null)
+    if [ -n "$SPF_URL" ]; then
+        TMP_DIR=$(mktemp -d)
+        if curl -fsSL --connect-timeout 15 --max-time 120 "$SPF_URL" | tar -xz -C "$TMP_DIR" 2>/dev/null; then
+            SPF_BIN=$(find "$TMP_DIR" -name "spf" -type f | head -1)
+            if [ -n "$SPF_BIN" ]; then
+                mkdir -p "$INSTALL_HOME/.local/bin"
+                cp "$SPF_BIN" "$INSTALL_HOME/.local/bin/spf"
+                chmod +x "$INSTALL_HOME/.local/bin/spf"
+                chown "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.local/bin/spf"
+                echo -e "${GREEN}✓ superfile (spf) installed${NC}"
+            fi
+        else
+            echo -e "${YELLOW}Could not download superfile (optional)${NC}"
+        fi
+        rm -rf "$TMP_DIR"
+    else
+        echo -e "${YELLOW}Could not fetch superfile release URL (optional)${NC}"
+    fi
 fi
 
 # ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────
