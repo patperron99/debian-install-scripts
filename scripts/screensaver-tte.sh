@@ -21,7 +21,18 @@ cleanup() {
     stty "$OLD_TTY"   2>/dev/null
     exit 0
 }
-trap cleanup INT TERM HUP USR1
+
+# Keypress, Ctrl-C, or terminal hangup → lock before exiting
+lock_and_cleanup() {
+    kill "$TTE_PID"   2>/dev/null
+    kill "$WATCH_PID" 2>/dev/null
+    stty "$OLD_TTY"   2>/dev/null
+    swaymsg exec -- hyprlock
+    exit 0
+}
+
+trap lock_and_cleanup USR1 INT
+trap cleanup          TERM HUP
 
 # Raw mode so any key is detected immediately (no Enter needed)
 stty -echo -icanon min 1 time 0 2>/dev/null
@@ -51,7 +62,7 @@ while true; do
     ( IFS= read -r -s -n1 _ </dev/tty 2>/dev/null; kill -USR1 "$SELF" 2>/dev/null ) &
     WATCH_PID=$!
 
-    gen_content | tte --random-effect --canvas-width -1 --canvas-height -1 --anchor-canvas c 2>/dev/null &
+    gen_content | tte --random-effect --canvas-width 0 --canvas-height 0 --anchor-canvas c 2>/dev/null &
     TTE_PID=$!
 
     wait "$TTE_PID"
