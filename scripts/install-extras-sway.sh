@@ -28,6 +28,13 @@ declare -a EXTRA_PACKAGES=(
     "psmisc"
     "jq"
     "fastfetch"
+    # yazi deps (file previews)
+    "bat"
+    "zoxide"
+    "imagemagick"
+    "ffmpegthumbnailer"
+    "poppler-utils"
+    "unar"
 )
 
 echo -e "${GREEN}=== Extras Installation ===${NC}"
@@ -163,6 +170,40 @@ if [ -n "$PRITUNL_DEB" ]; then
     rm -f "$TMP_DEB"
 else
     echo -e "${YELLOW}Could not fetch pritunl-client release URL (optional)${NC}"
+fi
+
+# ─── YAZI: Terminal File Manager (GitHub .deb musl) ──────────────────────────
+echo ""
+echo "Installing yazi (terminal file manager)..."
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)  YAZI_ASSET="yazi-x86_64-unknown-linux-musl.deb" ;;
+    aarch64) YAZI_ASSET="yazi-aarch64-unknown-linux-musl.deb" ;;
+    *)       YAZI_ASSET="" ;;
+esac
+
+if [ -z "$YAZI_ASSET" ]; then
+    echo -e "${YELLOW}yazi: unsupported architecture ($ARCH) — skipped${NC}"
+else
+    YAZI_URL=$(curl -s https://api.github.com/repos/sxyazi/yazi/releases/latest \
+        | python3 -c "import sys,json; r=json.load(sys.stdin); \
+          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$YAZI_ASSET'))" 2>/dev/null)
+    if [ -n "$YAZI_URL" ]; then
+        TMP_DEB=$(mktemp /tmp/yazi-XXXXXX.deb)
+        if curl -fsSL --connect-timeout 15 --max-time 120 -o "$TMP_DEB" "$YAZI_URL" 2>/dev/null; then
+            if dpkg -i "$TMP_DEB" 2>/dev/null; then
+                echo -e "${GREEN}✓ yazi installed${NC}"
+            else
+                apt-get install -f -y 2>/dev/null || true
+                echo -e "${GREEN}✓ yazi installed (with dependency fix)${NC}"
+            fi
+        else
+            echo -e "${YELLOW}Could not download yazi (optional)${NC}"
+        fi
+        rm -f "$TMP_DEB"
+    else
+        echo -e "${YELLOW}Could not fetch yazi release URL (optional)${NC}"
+    fi
 fi
 
 # ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────
