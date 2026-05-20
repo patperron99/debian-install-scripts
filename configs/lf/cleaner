@@ -1,0 +1,2 @@
+#!/bin/bash
+kitten icat --clear --transfer-mode=memory --unicode-placeholder --stdin=no >/dev/tty 2>/dev/null

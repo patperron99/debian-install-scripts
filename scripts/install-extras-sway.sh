@@ -28,6 +28,11 @@ declare -a EXTRA_PACKAGES=(
     "psmisc"
     "jq"
     "fastfetch"
+    # lf file manager + preview deps
+    "lf"
+    "bat"
+    "ffmpegthumbnailer"
+    "poppler-utils"
 )
 
 echo -e "${GREEN}=== Extras Installation ===${NC}"

@@ -1,0 +1,12 @@
+set previewer ~/.config/lf/previewer
+set cleaner ~/.config/lf/cleaner
+
+set icons true
+set hidden true
+set ratios 1:2:3
+set scrolloff 5
+set tabstop 4
+
+map <enter> open
+map <c-r> reload
+map . set hidden!

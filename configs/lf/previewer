@@ -1,0 +1,33 @@
+#!/bin/bash
+file="$1"
+w="$2"
+h="$3"
+x="$4"
+y="$5"
+
+mime=$(file -Lb --mime-type "$file")
+
+case "$mime" in
+    image/*)
+        kitten icat --transfer-mode=memory --unicode-placeholder --stdin=no \
+            --place "${w}x${h}@${x}x${y}" "$file" >/dev/tty 2>/dev/null
+        exit 1
+        ;;
+    video/*)
+        thumb="/tmp/lf-thumb-$$.jpg"
+        ffmpegthumbnailer -i "$file" -o "$thumb" -s 0 2>/dev/null
+        kitten icat --transfer-mode=memory --unicode-placeholder --stdin=no \
+            --place "${w}x${h}@${x}x${y}" "$thumb" >/dev/tty 2>/dev/null
+        rm -f "$thumb"
+        exit 1
+        ;;
+    application/pdf)
+        pdftotext -l 5 -nopgbrk -q "$file" - 2>/dev/null
+        ;;
+    text/*)
+        bat --color=always --style=plain --pager=never "$file" 2>/dev/null
+        ;;
+    *)
+        file -b "$file"
+        ;;
+esac
