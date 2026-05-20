@@ -219,7 +219,7 @@ fi
 echo ""
 echo "Installing helper scripts to ~/.local/bin/..."
 mkdir -p "$HOME/.local/bin"
-for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh screensaver-launch.sh screensaver-stop.sh screensaver-tte.sh; do
+for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh install-github-bins.sh screensaver-launch.sh screensaver-stop.sh screensaver-tte.sh; do
     if [ -f "$SCRIPTS_DIR/$helper" ]; then
         cp "$SCRIPTS_DIR/$helper" "$HOME/.local/bin/$helper"
         chmod +x "$HOME/.local/bin/$helper"

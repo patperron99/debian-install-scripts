@@ -73,7 +73,7 @@ for_window [app_id="pavucontrol"] floating enable
 for_window [app_id="bluetooth"] floating enable
 for_window [app_id="pulsemixer"] floating enable
 for_window [app_id="kitty"] opacity 0.97
-for_window [app_id="org.gnome.Nautilus"] opacity 0.95
+for_window [app_id="yazi"] opacity 0.95
 for_window [app_id="screensaver"] fullscreen enable, border none
 
 # ── Keybindings ───────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ for_window [app_id="screensaver"] fullscreen enable, border none
 # Applications
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
-bindsym $mod+e exec nautilus
+bindsym $mod+e exec $term -e yazi
 bindsym $mod+b exec flatpak run app.zen_browser.zen
 bindsym $mod+shift+a exec pavucontrol
 bindsym $mod+Shift+s exec chromium --app=https://app.slack.com/client --user-data-dir=$HOME/.config/chromium-slack --class=Slack

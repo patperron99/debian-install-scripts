@@ -94,6 +94,7 @@ CONFIG_FILES=(
     "$HOME/.config/waybar/style.css"
     "$HOME/.config/kanshi/config"
     "$HOME/.local/bin/check-updates.sh"
+    "$HOME/.local/bin/install-github-bins.sh"
 )
 
 for f in "${CONFIG_FILES[@]}"; do
