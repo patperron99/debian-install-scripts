@@ -140,6 +140,36 @@ else
     fi
 fi
 
+# ─── IMPALA: TUI WiFi Manager (GitHub binary) ────────────────────────────────
+echo ""
+echo "Installing impala (TUI WiFi manager)..."
+IMPALA_BIN="$INSTALL_HOME/.local/bin/impala"
+case "$ARCH" in
+    x86_64)  IMPALA_ASSET="impala-x86_64-unknown-linux-musl" ;;
+    aarch64) IMPALA_ASSET="impala-aarch64-unknown-linux-musl" ;;
+    *)       IMPALA_ASSET="" ;;
+esac
+
+if [ -z "$IMPALA_ASSET" ]; then
+    echo -e "${YELLOW}impala: unsupported architecture ($ARCH) — skipped${NC}"
+else
+    IMPALA_URL=$(curl -s https://api.github.com/repos/pythops/impala/releases/latest \
+        | python3 -c "import sys,json; r=json.load(sys.stdin); \
+          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$IMPALA_ASSET'))" 2>/dev/null)
+    if [ -n "$IMPALA_URL" ]; then
+        mkdir -p "$INSTALL_HOME/.local/bin"
+        if curl -fsSL --connect-timeout 15 --max-time 60 -o "$IMPALA_BIN" "$IMPALA_URL" 2>/dev/null; then
+            chmod +x "$IMPALA_BIN"
+            chown "$INSTALL_USER:$INSTALL_USER" "$IMPALA_BIN"
+            echo -e "${GREEN}✓ impala installed${NC}"
+        else
+            echo -e "${YELLOW}Could not download impala (optional)${NC}"
+        fi
+    else
+        echo -e "${YELLOW}Could not fetch impala release URL (optional)${NC}"
+    fi
+fi
+
 # ─── PRITUNL CLIENT: VPN (GitHub .deb for Trixie) ────────────────────────────
 echo ""
 echo "Installing pritunl-client (VPN)..."
