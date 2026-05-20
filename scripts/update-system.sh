@@ -38,6 +38,12 @@ if command -v flatpak &>/dev/null; then
     fi
 fi
 
+# --- GitHub binaries ---
+echo ""
+echo "Checking GitHub binaries..."
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+"$SCRIPT_DIR/install-github-bins.sh"
+
 # --- Reboot check ---
 if [ -f /var/run/reboot-required ]; then
     echo ""

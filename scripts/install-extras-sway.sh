@@ -109,66 +109,10 @@ runuser -l "$INSTALL_USER" -c "fc-cache -fv '$FONTS_DIR'" >/dev/null 2>&1 || \
     fc-cache -fv "$FONTS_DIR" >/dev/null 2>&1 || true
 echo -e "${GREEN}Nerd Fonts installed to $FONTS_DIR${NC}"
 
-# ─── BLUETUI: TUI Bluetooth Manager (GitHub binary) ───────────────────────────
+# ─── GITHUB BINARIES (bluetui, impala, yazi, spf) ────────────────────────────
 echo ""
-echo "Installing bluetui (TUI Bluetooth manager)..."
-BLUETUI_BIN="$INSTALL_HOME/.local/bin/bluetui"
-ARCH=$(uname -m)
-case "$ARCH" in
-    x86_64)  BLUETUI_ASSET="bluetui-x86_64-linux-musl" ;;
-    aarch64) BLUETUI_ASSET="bluetui-aarch64-linux-musl" ;;
-    *)       BLUETUI_ASSET="" ;;
-esac
-
-if [ -z "$BLUETUI_ASSET" ]; then
-    echo -e "${YELLOW}bluetui: unsupported architecture ($ARCH) — skipped${NC}"
-else
-    BLUETUI_URL=$(curl -s https://api.github.com/repos/pythops/bluetui/releases/latest \
-        | python3 -c "import sys,json; r=json.load(sys.stdin); \
-          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$BLUETUI_ASSET'))" 2>/dev/null)
-    if [ -n "$BLUETUI_URL" ]; then
-        mkdir -p "$INSTALL_HOME/.local/bin"
-        if curl -fsSL --connect-timeout 15 --max-time 60 -o "$BLUETUI_BIN" "$BLUETUI_URL" 2>/dev/null; then
-            chmod +x "$BLUETUI_BIN"
-            chown "$INSTALL_USER:$INSTALL_USER" "$BLUETUI_BIN"
-            echo -e "${GREEN}✓ bluetui installed${NC}"
-        else
-            echo -e "${YELLOW}Could not download bluetui (optional)${NC}"
-        fi
-    else
-        echo -e "${YELLOW}Could not fetch bluetui release URL (optional)${NC}"
-    fi
-fi
-
-# ─── IMPALA: TUI WiFi Manager (GitHub binary) ────────────────────────────────
-echo ""
-echo "Installing impala (TUI WiFi manager)..."
-IMPALA_BIN="$INSTALL_HOME/.local/bin/impala"
-case "$ARCH" in
-    x86_64)  IMPALA_ASSET="impala-x86_64-unknown-linux-musl" ;;
-    aarch64) IMPALA_ASSET="impala-aarch64-unknown-linux-musl" ;;
-    *)       IMPALA_ASSET="" ;;
-esac
-
-if [ -z "$IMPALA_ASSET" ]; then
-    echo -e "${YELLOW}impala: unsupported architecture ($ARCH) — skipped${NC}"
-else
-    IMPALA_URL=$(curl -s https://api.github.com/repos/pythops/impala/releases/latest \
-        | python3 -c "import sys,json; r=json.load(sys.stdin); \
-          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$IMPALA_ASSET'))" 2>/dev/null)
-    if [ -n "$IMPALA_URL" ]; then
-        mkdir -p "$INSTALL_HOME/.local/bin"
-        if curl -fsSL --connect-timeout 15 --max-time 60 -o "$IMPALA_BIN" "$IMPALA_URL" 2>/dev/null; then
-            chmod +x "$IMPALA_BIN"
-            chown "$INSTALL_USER:$INSTALL_USER" "$IMPALA_BIN"
-            echo -e "${GREEN}✓ impala installed${NC}"
-        else
-            echo -e "${YELLOW}Could not download impala (optional)${NC}"
-        fi
-    else
-        echo -e "${YELLOW}Could not fetch impala release URL (optional)${NC}"
-    fi
-fi
+echo "Installing GitHub binaries..."
+bash "$(dirname "$0")/install-github-bins.sh" --user "$INSTALL_USER"
 
 # ─── PRITUNL CLIENT: VPN (GitHub .deb for Trixie) ────────────────────────────
 echo ""
@@ -197,80 +141,6 @@ if [ -n "$PRITUNL_DEB" ]; then
     rm -f "$TMP_DEB"
 else
     echo -e "${YELLOW}Could not fetch pritunl-client release URL (optional)${NC}"
-fi
-
-# ─── YAZI: Terminal File Manager (GitHub binary) ─────────────────────────────
-echo ""
-echo "Installing yazi (terminal file manager)..."
-ARCH=$(uname -m)
-case "$ARCH" in
-    x86_64)  YAZI_ASSET="yazi-x86_64-unknown-linux-musl.zip" ;;
-    aarch64) YAZI_ASSET="yazi-aarch64-unknown-linux-musl.zip" ;;
-    *)       YAZI_ASSET="" ;;
-esac
-
-if [ -z "$YAZI_ASSET" ]; then
-    echo -e "${YELLOW}yazi: unsupported architecture ($ARCH) — skipped${NC}"
-else
-    YAZI_URL=$(curl -s https://api.github.com/repos/sxyazi/yazi/releases/latest \
-        | python3 -c "import sys,json; r=json.load(sys.stdin); \
-          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$YAZI_ASSET'))" 2>/dev/null)
-    if [ -n "$YAZI_URL" ]; then
-        TMP_ZIP=$(mktemp /tmp/yazi-XXXXXX.zip)
-        TMP_DIR=$(mktemp -d)
-        if curl -fsSL --connect-timeout 15 --max-time 120 -o "$TMP_ZIP" "$YAZI_URL" 2>/dev/null; then
-            if unzip -o "$TMP_ZIP" "*/yazi" -d "$TMP_DIR" 2>/dev/null; then
-                YAZI_BIN=$(find "$TMP_DIR" -name "yazi" -type f | head -1)
-                mkdir -p "$INSTALL_HOME/.local/bin"
-                cp "$YAZI_BIN" "$INSTALL_HOME/.local/bin/yazi"
-                chmod +x "$INSTALL_HOME/.local/bin/yazi"
-                chown "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.local/bin/yazi"
-                echo -e "${GREEN}✓ yazi installed${NC}"
-            fi
-        else
-            echo -e "${YELLOW}Could not download yazi (optional)${NC}"
-        fi
-        rm -f "$TMP_ZIP" && rm -rf "$TMP_DIR"
-    else
-        echo -e "${YELLOW}Could not fetch yazi release URL (optional)${NC}"
-    fi
-fi
-
-# ─── SUPERFILE: Terminal File Manager (GitHub binary) ────────────────────────
-echo ""
-echo "Installing superfile (spf)..."
-ARCH=$(uname -m)
-case "$ARCH" in
-    x86_64)  SPF_ARCH="amd64" ;;
-    aarch64) SPF_ARCH="arm64" ;;
-    *)       SPF_ARCH="" ;;
-esac
-
-if [ -z "$SPF_ARCH" ]; then
-    echo -e "${YELLOW}superfile: unsupported architecture ($ARCH) — skipped${NC}"
-else
-    SPF_URL=$(curl -s https://api.github.com/repos/yorukot/superfile/releases/latest \
-        | python3 -c "import sys,json; r=json.load(sys.stdin); \
-          print(next(a['browser_download_url'] for a in r['assets'] \
-          if 'linux' in a['name'] and '$SPF_ARCH' in a['name']))" 2>/dev/null)
-    if [ -n "$SPF_URL" ]; then
-        TMP_DIR=$(mktemp -d)
-        if curl -fsSL --connect-timeout 15 --max-time 120 "$SPF_URL" | tar -xz -C "$TMP_DIR" 2>/dev/null; then
-            SPF_BIN=$(find "$TMP_DIR" -name "spf" -type f | head -1)
-            if [ -n "$SPF_BIN" ]; then
-                mkdir -p "$INSTALL_HOME/.local/bin"
-                cp "$SPF_BIN" "$INSTALL_HOME/.local/bin/spf"
-                chmod +x "$INSTALL_HOME/.local/bin/spf"
-                chown "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.local/bin/spf"
-                echo -e "${GREEN}✓ superfile (spf) installed${NC}"
-            fi
-        else
-            echo -e "${YELLOW}Could not download superfile (optional)${NC}"
-        fi
-        rm -rf "$TMP_DIR"
-    else
-        echo -e "${YELLOW}Could not fetch superfile release URL (optional)${NC}"
-    fi
 fi
 
 # ─── TMUX PLUGIN MANAGER ──────────────────────────────────────────────────────
