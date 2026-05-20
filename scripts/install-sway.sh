@@ -93,6 +93,7 @@ declare -a PACKAGES=(
   "bluez"
   "kanshi"
   "swayimg"
+  "btop"
 
   # Qt Wayland support
   "qtwayland5"

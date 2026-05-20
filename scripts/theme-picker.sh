@@ -117,18 +117,36 @@ apply_neovim_theme() {
     esac
     printf '%s\n' "$lua" > "$NVIM_CS_FILE"
 
-    local cs_name
+    local cs_name lazy_plugin
     case "$slug" in
-        catppuccin-mocha) cs_name="catppuccin" ;;
-        tokyo-night)      cs_name="tokyonight-night" ;;
-        gruvbox)          cs_name="gruvbox" ;;
-        nord)             cs_name="nord" ;;
-        rose-pine)        cs_name="rose-pine" ;;
+        catppuccin-mocha) cs_name="catppuccin";      lazy_plugin="catppuccin" ;;
+        tokyo-night)      cs_name="tokyonight-night"; lazy_plugin="tokyonight.nvim" ;;
+        gruvbox)          cs_name="gruvbox";          lazy_plugin="gruvbox.nvim" ;;
+        nord)             cs_name="nord";             lazy_plugin="nord.nvim" ;;
+        rose-pine)        cs_name="rose-pine";        lazy_plugin="rose-pine" ;;
         *) return ;;
     esac
     for sock in /tmp/nvim.*.0 /run/user/"$(id -u)"/nvim.*.0; do
-        [ -S "$sock" ] && nvim --server "$sock" --remote-send ":colorscheme $cs_name<CR>" 2>/dev/null || true
+        [ -S "$sock" ] || continue
+        nvim --server "$sock" --remote-send ":Lazy load $lazy_plugin<CR>:colorscheme $cs_name<CR>" 2>/dev/null || true
     done
+}
+
+# ── Btop theme ───────────────────────────────────────────────────────────────
+apply_btop_theme() {
+    local slug="$1"
+    local btop_conf="$HOME/.config/btop/btop.conf"
+    [ -f "$btop_conf" ] || return
+    local btop_theme
+    case "$slug" in
+        catppuccin-mocha) btop_theme="Default" ;;
+        tokyo-night)      btop_theme="tokyo-night" ;;
+        gruvbox)          btop_theme="gruvbox_dark_v2" ;;
+        nord)             btop_theme="nord" ;;
+        rose-pine)        btop_theme="Default" ;;
+        *) return ;;
+    esac
+    sed -i "s|^color_theme = .*|color_theme = \"$btop_theme\"|" "$btop_conf"
 }
 
 # ── Wallpaper ────────────────────────────────────────────────────────────────
@@ -181,6 +199,7 @@ apply_waybar_theme
 apply_mako_theme
 apply_tmux_theme
 apply_neovim_theme "$SLUG"
+apply_btop_theme "$SLUG"
 apply_wallpaper_theme "$SLUG"
 
 notify-send "Theme" "Applied: $CHOICE" 2>/dev/null || true
