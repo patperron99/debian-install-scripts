@@ -56,6 +56,7 @@ apply_kitty_theme() {
     local src="$HOME/.config/kitty/themes/${SLUG}.conf"
     local dst="$HOME/.config/kitty/current-theme.conf"
     [ -f "$src" ] && cp "$src" "$dst"
+    pkill -SIGUSR1 kitty 2>/dev/null || true
 }
 
 # ── Waybar colors (from template) ────────────────────────────────────────────
@@ -115,6 +116,19 @@ apply_neovim_theme() {
         *) return ;;
     esac
     printf '%s\n' "$lua" > "$NVIM_CS_FILE"
+
+    local cs_name
+    case "$slug" in
+        catppuccin-mocha) cs_name="catppuccin" ;;
+        tokyo-night)      cs_name="tokyonight-night" ;;
+        gruvbox)          cs_name="gruvbox" ;;
+        nord)             cs_name="nord" ;;
+        rose-pine)        cs_name="rose-pine" ;;
+        *) return ;;
+    esac
+    for sock in /tmp/nvim.*.0 /run/user/"$(id -u)"/nvim.*.0; do
+        [ -S "$sock" ] && nvim --server "$sock" --remote-send ":colorscheme $cs_name<CR>" 2>/dev/null || true
+    done
 }
 
 # ── Wallpaper ────────────────────────────────────────────────────────────────

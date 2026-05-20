@@ -27,12 +27,8 @@ Dernière mise à jour : 2026-05-22
   sudo systemctl enable --now systemd-resolved
   sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
   ```
-- [ ] **`xdg-desktop-portal-gtk`** — nécessaire pour file picker (pritunl import "i"). Installer après DNS fixé :
-  ```bash
-  sudo apt-get install -y xdg-desktop-portal-gtk
-  systemctl --user restart xdg-desktop-portal.service
-  ```
-- [ ] **`pritunl-client`** — tester import profil (touche "i") une fois portals installés
+- [x] **`xdg-desktop-portal-gtk`** — installé
+- [x] **`pritunl-client`** — import via CLI : `pritunl-client add /chemin/profil.tar` (touche "i" du TUI ne fonctionne pas, abandonné)
 - [ ] Ajouter `systemctl enable systemd-resolved` dans `install-sway.sh`
 
 ### Bugs connus
