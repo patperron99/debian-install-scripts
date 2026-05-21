@@ -166,6 +166,15 @@ apt-get install -y -t testing hyprlock
 echo -e "${GREEN}✓ hyprlock installed from testing${NC}"
 
 echo ""
+echo "Configuring NetworkManager to use iwd as WiFi backend..."
+mkdir -p /etc/NetworkManager/conf.d
+cat > /etc/NetworkManager/conf.d/wifi-backend.conf << 'EOF'
+[device]
+wifi.backend=iwd
+EOF
+echo -e "${GREEN}✓ NM → iwd backend configured${NC}"
+
+echo ""
 echo "Enabling essential services..."
 systemctl enable iwd
 systemctl enable bluetooth
@@ -174,7 +183,7 @@ systemctl enable --now power-profiles-daemon
 
 echo ""
 echo "Installing terminaltexteffects (TTE screensaver)..."
-sudo -u "$INSTALL_USER" pipx install terminaltexteffects
+sudo -u "$INSTALL_USER" pip install --break-system-packages terminaltexteffects
 echo -e "${GREEN}✓ terminaltexteffects installed${NC}"
 
 echo ""

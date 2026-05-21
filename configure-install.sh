@@ -65,10 +65,14 @@ _pass() {
     while true; do
         _p1=$(gum input --password --prompt "$label : " \
             --prompt.foreground "$C" --cursor.foreground "$C")
+        if [ -z "$_p1" ]; then
+            echo "  Mot de passe vide — réessayer." >&2
+            continue
+        fi
         _p2=$(gum input --password --prompt "Confirmer : " \
             --prompt.foreground "$C" --cursor.foreground "$C")
         [ "$_p1" = "$_p2" ] && { echo "$_p1"; return; }
-        gum style --foreground 196 "  Les mots de passe ne correspondent pas, réessayer."
+        echo "  Les mots de passe ne correspondent pas — réessayer." >&2
     done
 }
 
