@@ -32,6 +32,11 @@ declare -a EXTRA_PACKAGES=(
     "bat"
     "ffmpegthumbnailer"
     "poppler-utils"
+    "unar"
+    "imagemagick"
+    "libimage-exiftool-perl"
+    "zoxide"
+    "chafa"
 )
 
 echo -e "${GREEN}=== Extras Installation ===${NC}"
