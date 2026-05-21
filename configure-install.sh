@@ -19,7 +19,6 @@ log()    { echo -e "${GREEN}[+]${NC} $1"; }
 warn()   { echo -e "${YELLOW}[!]${NC} $1"; }
 error()  { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 header() { echo -e "\n${BOLD}${CYAN}══ $1 ══${NC}"; }
-ask()    { echo -e "${BLUE}$1${NC}"; }
 
 # ── Root check ────────────────────────────────────────────────────────────────
 if [ "$EUID" -ne 0 ]; then
@@ -34,32 +33,26 @@ fi
 
 # ── Helper : prompt avec défaut ───────────────────────────────────────────────
 prompt_default() {
-    local label="$1" default="$2"
-    ask "${label} [${default}] : "
-    read -r _val
+    local label="$1" default="$2" _val
+    read -rp "$(echo -e "${BLUE}${label}${NC} [${default}] : ")" _val
     echo "${_val:-$default}"
 }
 
 # ── Helper : confirmation y/N ─────────────────────────────────────────────────
 prompt_yn() {
-    local label="$1" default="${2:-n}"
-    local indicator
+    local label="$1" default="${2:-n}" _yn indicator
     if [[ "${default,,}" == "y" ]]; then indicator="Y/n"; else indicator="y/N"; fi
-    ask "${label} (${indicator}) : "
-    read -r _yn
+    read -rp "$(echo -e "${BLUE}${label}${NC} (${indicator}) : ")" _yn
     if [ -z "$_yn" ]; then _yn="$default"; fi
     [[ "${_yn,,}" =~ ^(y|yes)$ ]]
 }
 
 # ── Helper : double password ──────────────────────────────────────────────────
 prompt_password() {
-    local label="$1"
-    local _p1 _p2
+    local label="$1" _p1 _p2
     while true; do
-        ask "${label} : "
-        read -rsp "" _p1; echo
-        ask "Confirmer : "
-        read -rsp "" _p2; echo
+        read -rsp "$(echo -e "${BLUE}${label}${NC} : ")" _p1; echo
+        read -rsp "$(echo -e "${BLUE}Confirmer${NC} : ")" _p2; echo
         if [ "$_p1" = "$_p2" ]; then
             echo "$_p1"
             return
@@ -99,8 +92,7 @@ echo "  1) btrfs  — subvolumes, snapshots, compression zstd (recommandé)"
 echo "  2) ext4   — classique, stable"
 echo "  3) xfs    — hautes performances, gros volumes"
 echo ""
-ask "Choix [1] : "
-read -r _fs_choice
+read -rp "$(echo -e "${BLUE}Choix${NC} [1] : ")" _fs_choice
 case "${_fs_choice:-1}" in
     2) INSTALL_FS="ext4" ;;
     3) INSTALL_FS="xfs" ;;
@@ -132,8 +124,7 @@ header "4/9  Version Debian"
 echo "  1) stable   — Debian stable (recommandé)"
 echo "  2) testing  — Debian testing (plus récent)"
 echo ""
-ask "Choix [1] : "
-read -r _rel_choice
+read -rp "$(echo -e "${BLUE}Choix${NC} [1] : ")" _rel_choice
 case "${_rel_choice:-1}" in
     2) INSTALL_RELEASE="testing" ;;
     *) INSTALL_RELEASE="stable" ;;
@@ -230,8 +221,7 @@ echo ""
 
 warn "ATTENTION : $INSTALL_DISK sera entièrement effacé lors de l'installation."
 echo ""
-ask "Confirmer et écrire la configuration ? (y/N) : "
-read -r _confirm
+read -rp "$(echo -e "${BLUE}Confirmer et écrire la configuration ?${NC} (y/N) : ")" _confirm
 if [[ ! "${_confirm,,}" =~ ^(y|yes)$ ]]; then
     echo "Annulé."
     exit 0
