@@ -29,7 +29,6 @@ declare -a EXTRA_PACKAGES=(
     "jq"
     "fastfetch"
     # file manager + preview deps
-    "file"
     "bat"
     "ffmpegthumbnailer"
     "poppler-utils"
@@ -62,10 +61,10 @@ for pkg in "${EXTRA_PACKAGES[@]}"; do
 done
 
 echo ""
-echo "Installing neovim from testing (stable version is too old for LazyVim)..."
+echo "Installing packages from testing (version conflicts with stable)..."
 setup_testing_sources
-apt-get install -y -t testing neovim
-echo -e "${GREEN}✓ neovim installed from testing${NC}"
+apt-get install -y -t testing neovim file
+echo -e "${GREEN}✓ neovim, file installed from testing${NC}"
 
 if check_package "gnome-calculator"; then
     if install_package_no_recommends "gnome-calculator"; then
