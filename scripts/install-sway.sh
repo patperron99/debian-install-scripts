@@ -156,6 +156,10 @@ for pkg in gnome-keyring gvfs-backends; do
 done
 
 echo ""
+echo "Removing foot (installed as sway recommendation, kitty used instead)..."
+apt-get purge -y foot 2>/dev/null && echo -e "${GREEN}✓ foot removed${NC}" || true
+
+echo ""
 echo "Installing hyprlock from testing..."
 setup_testing_sources
 apt-get install -y -t testing hyprlock
