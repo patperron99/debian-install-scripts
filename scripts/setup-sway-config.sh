@@ -113,8 +113,9 @@ echo -e "${GREEN}Installed: ~/.config/waybar/${NC}"
 echo ""
 echo "Installing Wofi launcher configuration..."
 mkdir -p "$HOME/.config/wofi"
-cp "$CONFIGS_DIR/wofi/config"     "$HOME/.config/wofi/config"
-cp "$CONFIGS_DIR/wofi/style.css"  "$HOME/.config/wofi/style.css"
+cp "$CONFIGS_DIR/wofi/config"          "$HOME/.config/wofi/config"
+cp "$CONFIGS_DIR/wofi/style.css"       "$HOME/.config/wofi/style.css"
+cp "$CONFIGS_DIR/wofi/style.css.tmpl"  "$HOME/.config/wofi/style.css.tmpl"
 echo -e "${GREEN}Installed: ~/.config/wofi/${NC}"
 
 # Install Kitty terminal config
@@ -219,7 +220,7 @@ fi
 echo ""
 echo "Installing helper scripts to ~/.local/bin/..."
 mkdir -p "$HOME/.local/bin"
-for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh install-github-bins.sh screensaver-launch.sh screensaver-stop.sh screensaver-tte.sh; do
+for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh install-github-bins.sh screensaver-launch.sh screensaver-stop.sh screensaver-lock.sh screensaver-tte.sh; do
     if [ -f "$SCRIPTS_DIR/$helper" ]; then
         cp "$SCRIPTS_DIR/$helper" "$HOME/.local/bin/$helper"
         chmod +x "$HOME/.local/bin/$helper"

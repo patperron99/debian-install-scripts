@@ -20,6 +20,7 @@ THEMES_DIR="$HOME/.config/themes"
 TMUX_TMPL="$HOME/.config/tmux/theme.tmpl"
 WAYBAR_TMPL="$HOME/.config/waybar/colors.tmpl"
 MAKO_TMPL="$HOME/.config/mako/config.tmpl"
+WOFI_TMPL="$HOME/.config/wofi/style.css.tmpl"
 
 # Display name → theme slug
 declare -A THEME_SLUGS
@@ -71,6 +72,11 @@ apply_waybar_theme() {
 apply_mako_theme() {
     envsubst < "$MAKO_TMPL" > "$HOME/.config/mako/config"
     makoctl reload 2>/dev/null || true
+}
+
+# ── Wofi style (from template) ───────────────────────────────────────────────
+apply_wofi_theme() {
+    envsubst < "$WOFI_TMPL" > "$HOME/.config/wofi/style.css"
 }
 
 # ── Tmux powerline theme (from template) ─────────────────────────────────────
@@ -195,6 +201,7 @@ apply_gtk_theme
 apply_kitty_theme
 apply_waybar_theme
 apply_mako_theme
+apply_wofi_theme
 apply_tmux_theme
 apply_neovim_theme "$SLUG"
 apply_btop_theme "$SLUG"
