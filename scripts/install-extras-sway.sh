@@ -29,6 +29,7 @@ declare -a EXTRA_PACKAGES=(
     "jq"
     "fastfetch"
     # file manager + preview deps
+    "file"
     "bat"
     "ffmpegthumbnailer"
     "poppler-utils"
