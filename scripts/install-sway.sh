@@ -140,7 +140,7 @@ done
 # GNOME utilities without Recommends to prevent DE pollution
 echo ""
 echo "Installing GNOME utilities (no recommends)..."
-for pkg in nautilus gnome-keyring gvfs-backends; do
+for pkg in gnome-keyring gvfs-backends; do
   if check_package "$pkg"; then
     if install_package_no_recommends "$pkg"; then
       SUCCESSFUL_PACKAGES+=("$pkg")
