@@ -8,99 +8,105 @@ set -eo pipefail
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-log()    { echo -e "${GREEN}[+]${NC} $1"; }
-warn()   { echo -e "${YELLOW}[!]${NC} $1"; }
-error()  { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
-header() { echo -e "\n${BOLD}${CYAN}══ $1 ══${NC}"; }
+log()   { echo -e "${GREEN}[+]${NC} $1"; }
+warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
+error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
 # ── Root check ────────────────────────────────────────────────────────────────
 if [ "$EUID" -ne 0 ]; then
     error "Lancer en tant que root : sudo bash configure-install.sh"
 fi
 
-# ── fzf ───────────────────────────────────────────────────────────────────────
-if ! command -v fzf &>/dev/null; then
-    log "Installation de fzf..."
-    apt-get update -qq && apt-get install -y -qq fzf || error "Impossible d'installer fzf"
+# ── Installer gum ─────────────────────────────────────────────────────────────
+if ! command -v gum &>/dev/null; then
+    log "Installation de gum (Charm)..."
+    apt-get update -qq
+    apt-get install -y -qq curl gpg
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://repo.charm.sh/apt/gpg.key | \
+        gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" \
+        > /etc/apt/sources.list.d/charm.list
+    apt-get update -qq && apt-get install -y -qq gum || error "Impossible d'installer gum"
 fi
 
-# ── Helper : prompt avec défaut ───────────────────────────────────────────────
-prompt_default() {
-    local label="$1" default="$2" _val
-    read -rp "$(echo -e "${BLUE}${label}${NC} [${default}] : ")" _val
-    echo "${_val:-$default}"
+# ── Styles communs gum ────────────────────────────────────────────────────────
+C=212  # couleur principale (mauve Charm)
+
+_choose() { gum choose \
+    --selected.foreground "$C" --cursor.foreground "$C" \
+    --header.foreground "$C" "$@"; }
+
+_filter() { gum filter \
+    --indicator.foreground "$C" --match.foreground "$C" \
+    --prompt.foreground "$C" --placeholder.foreground 240 \
+    --height 18 "$@"; }
+
+_input() { gum input \
+    --prompt.foreground "$C" --cursor.foreground "$C" \
+    --placeholder.foreground 240 "$@"; }
+
+_confirm() { gum confirm \
+    --selected.foreground 0 --selected.background "$C" \
+    --unselected.foreground 252 "$@"; }
+
+_section() {
+    echo ""
+    gum style --foreground "$C" --bold "── $1 ──"
+    echo ""
 }
 
-# ── Helper : confirmation y/N ─────────────────────────────────────────────────
-prompt_yn() {
-    local label="$1" default="${2:-n}" _yn indicator
-    if [[ "${default,,}" == "y" ]]; then indicator="Y/n"; else indicator="y/N"; fi
-    read -rp "$(echo -e "${BLUE}${label}${NC} (${indicator}) : ")" _yn
-    if [ -z "$_yn" ]; then _yn="$default"; fi
-    [[ "${_yn,,}" =~ ^(y|yes)$ ]]
-}
-
-# ── Helper : double password ──────────────────────────────────────────────────
-prompt_password() {
+_pass() {
     local label="$1" _p1 _p2
     while true; do
-        read -rsp "$(echo -e "${BLUE}${label}${NC} : ")" _p1; echo
-        read -rsp "$(echo -e "${BLUE}Confirmer${NC} : ")" _p2; echo
-        if [ "$_p1" = "$_p2" ]; then
-            echo "$_p1"
-            return
-        fi
-        warn "Les mots de passe ne correspondent pas. Réessayer."
+        _p1=$(gum input --password --prompt "$label : " \
+            --prompt.foreground "$C" --cursor.foreground "$C")
+        _p2=$(gum input --password --prompt "Confirmer : " \
+            --prompt.foreground "$C" --cursor.foreground "$C")
+        [ "$_p1" = "$_p2" ] && { echo "$_p1"; return; }
+        gum style --foreground 196 "  Les mots de passe ne correspondent pas, réessayer."
     done
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-echo ""
-echo -e "${BOLD}${GREEN}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}${GREEN}║     Configuration d'installation Debian          ║${NC}"
-echo -e "${BOLD}${GREEN}╚══════════════════════════════════════════════════╝${NC}"
-echo ""
-echo "Ce script collecte toute la configuration nécessaire."
-echo "Les scripts d'installation s'exécuteront ensuite sans interruption."
-echo ""
+clear
+gum style \
+    --border double --border-foreground "$C" \
+    --padding "1 4" --margin "1 2" \
+    --bold --foreground "$C" \
+    "  Configuration d'installation Debian  "
+
+gum style --foreground 252 \
+    "Ce script collecte toute la configuration en une seule session." \
+    "Les scripts d'installation s'exécuteront ensuite sans interruption."
 
 # ── 1. Disque ─────────────────────────────────────────────────────────────────
-header "1/9  Disque cible"
+_section "1/9  Disque cible"
 
 mapfile -t _disks < <(lsblk -d -n -p -o NAME,SIZE,MODEL | grep -E '^/dev/(sd|vd|nvme)')
-if [ ${#_disks[@]} -eq 0 ]; then
-    error "Aucun disque trouvé (sd*, vd*, nvme*)"
-fi
+[ ${#_disks[@]} -eq 0 ] && error "Aucun disque trouvé (sd*, vd*, nvme*)"
 
 INSTALL_DISK=$(printf '%s\n' "${_disks[@]}" | \
-    fzf --prompt="  Sélectionner le disque d'installation > " \
-        --height=10 --border --no-sort | \
+    _filter --placeholder "Taper pour filtrer, Entrée pour sélectionner..." | \
     awk '{print $1}')
 [ -z "$INSTALL_DISK" ] && error "Aucun disque sélectionné."
 log "Disque : $INSTALL_DISK"
 
 # ── 2. Filesystem ─────────────────────────────────────────────────────────────
-header "2/9  Système de fichiers"
-echo "  1) btrfs  — subvolumes, snapshots, compression zstd (recommandé)"
-echo "  2) ext4   — classique, stable"
-echo "  3) xfs    — hautes performances, gros volumes"
-echo ""
-read -rp "$(echo -e "${BLUE}Choix${NC} [1] : ")" _fs_choice
-case "${_fs_choice:-1}" in
-    2) INSTALL_FS="ext4" ;;
-    3) INSTALL_FS="xfs" ;;
-    *) INSTALL_FS="btrfs" ;;
-esac
-log "Filesystem : $INSTALL_FS"
+_section "2/9  Système de fichiers"
 
-# Snapshots uniquement si btrfs
+_fs_raw=$(_choose \
+    --header "Choisir le système de fichiers :" \
+    "btrfs  — subvolumes, snapshots, compression zstd (recommandé)" \
+    "ext4   — classique, stable" \
+    "xfs    — hautes performances, gros volumes")
+[ -z "$_fs_raw" ] && error "Aucun filesystem sélectionné."
+INSTALL_FS=$(awk '{print $1}' <<< "$_fs_raw")
+
 if [ "$INSTALL_FS" = "btrfs" ]; then
     INSTALL_SNAPSHOTS="yes"
     INSTALL_SNAPSHOT_BOOT="yes"
@@ -108,10 +114,12 @@ else
     INSTALL_SNAPSHOTS="no"
     INSTALL_SNAPSHOT_BOOT="no"
 fi
+log "Filesystem : $INSTALL_FS"
 
 # ── 3. LUKS ───────────────────────────────────────────────────────────────────
-header "3/9  Chiffrement LUKS2"
-if prompt_yn "Chiffrer la partition root avec LUKS2 ?" "y"; then
+_section "3/9  Chiffrement LUKS2"
+
+if _confirm "Chiffrer la partition root avec LUKS2 ?" --default=true; then
     INSTALL_LUKS="yes"
     log "LUKS : activé"
 else
@@ -120,48 +128,47 @@ else
 fi
 
 # ── 4. Release Debian ─────────────────────────────────────────────────────────
-header "4/9  Version Debian"
-echo "  1) stable   — Debian stable (recommandé)"
-echo "  2) testing  — Debian testing (plus récent)"
-echo ""
-read -rp "$(echo -e "${BLUE}Choix${NC} [1] : ")" _rel_choice
-case "${_rel_choice:-1}" in
-    2) INSTALL_RELEASE="testing" ;;
-    *) INSTALL_RELEASE="stable" ;;
-esac
+_section "4/9  Version Debian"
+
+_rel_raw=$(_choose \
+    --header "Choisir la version Debian :" \
+    "stable  — Debian stable (recommandé)" \
+    "testing — Debian testing (plus récent)")
+INSTALL_RELEASE=$(awk '{print $1}' <<< "${_rel_raw:-stable}")
 log "Release : $INSTALL_RELEASE"
 
 # ── 5. Timezone ───────────────────────────────────────────────────────────────
-header "5/9  Fuseau horaire"
+_section "5/9  Fuseau horaire"
+
 INSTALL_TIMEZONE=$(timedatectl list-timezones | \
-    fzf --prompt="  Fuseau horaire > " \
-        --query="America/" \
-        --height=20 --border)
+    _filter --placeholder "Taper pour filtrer  ex: America/Montreal")
 [ -z "$INSTALL_TIMEZONE" ] && INSTALL_TIMEZONE="America/Montreal"
 log "Timezone : $INSTALL_TIMEZONE"
 
 # ── 6. Locale ─────────────────────────────────────────────────────────────────
-header "6/9  Locale"
-_locale_list=""
-if [ -f /usr/share/i18n/SUPPORTED ]; then
-    _locale_list=$(grep -v '^#' /usr/share/i18n/SUPPORTED | awk '{print $1}' | sort -u)
-elif [ -f /usr/share/locale/locale.alias ]; then
-    _locale_list=$(grep -v '^#' /usr/share/locale/locale.alias | awk '{print $2}' | sort -u)
-fi
+_section "6/9  Locale"
 
-if [ -n "$_locale_list" ]; then
-    INSTALL_LOCALE=$(echo "$_locale_list" | \
-        fzf --prompt="  Locale > " \
-            --query="fr_FR" \
-            --height=20 --border)
+_locale_src=""
+[ -f /usr/share/i18n/SUPPORTED ] && \
+    _locale_src=$(grep -v '^#' /usr/share/i18n/SUPPORTED | awk '{print $1}' | sort -u)
+
+INSTALL_LOCALE=""
+if [ -n "$_locale_src" ]; then
+    INSTALL_LOCALE=$(echo "$_locale_src" | \
+        _filter --placeholder "Taper pour filtrer  ex: fr_FR.UTF-8")
 fi
 [ -z "$INSTALL_LOCALE" ] && INSTALL_LOCALE="fr_FR.UTF-8"
 log "Locale : $INSTALL_LOCALE"
 
 # ── 7. Hostname & Username ────────────────────────────────────────────────────
-header "7/9  Identifiants machine"
-INSTALL_HOSTNAME=$(prompt_default "Hostname" "debian")
-INSTALL_USERNAME=$(prompt_default "Nom d'utilisateur" "user")
+_section "7/9  Identifiants machine"
+
+INSTALL_HOSTNAME=$(_input --placeholder "debian" --prompt "Hostname : ")
+INSTALL_HOSTNAME="${INSTALL_HOSTNAME:-debian}"
+
+INSTALL_USERNAME=$(_input --placeholder "user" --prompt "Nom d'utilisateur : ")
+INSTALL_USERNAME="${INSTALL_USERNAME:-user}"
+
 log "Hostname : $INSTALL_HOSTNAME"
 log "Username : $INSTALL_USERNAME"
 
@@ -169,8 +176,8 @@ log "Username : $INSTALL_USERNAME"
 INSTALL_COPY_WIFI="no"
 if [ -d /etc/NetworkManager/system-connections ] && \
    [ -n "$(ls -A /etc/NetworkManager/system-connections 2>/dev/null)" ]; then
-    header "8/9  Configuration WiFi"
-    if prompt_yn "Copier la configuration WiFi du LiveCD vers la nouvelle installation ?" "y"; then
+    _section "8/9  Configuration WiFi"
+    if _confirm "Copier la configuration WiFi du LiveCD vers la nouvelle installation ?" --default=true; then
         INSTALL_COPY_WIFI="yes"
         log "WiFi : copie activée"
     else
@@ -181,51 +188,45 @@ else
 fi
 
 # ── 9. Mots de passe ──────────────────────────────────────────────────────────
-header "9/9  Mots de passe"
+_section "9/9  Mots de passe"
 
 INSTALL_LUKS_PASS=""
 if [ "$INSTALL_LUKS" = "yes" ]; then
-    INSTALL_LUKS_PASS=$(prompt_password "Passphrase LUKS")
+    INSTALL_LUKS_PASS=$(_pass "Passphrase LUKS")
     log "Passphrase LUKS : définie"
 fi
 
-INSTALL_ROOT_PASS=$(prompt_password "Mot de passe root")
+INSTALL_ROOT_PASS=$(_pass "Mot de passe root")
 log "Mot de passe root : défini"
 
-INSTALL_USER_PASS=$(prompt_password "Mot de passe pour '$INSTALL_USERNAME'")
+INSTALL_USER_PASS=$(_pass "Mot de passe '$INSTALL_USERNAME'")
 log "Mot de passe utilisateur : défini"
 
 # ── Résumé ────────────────────────────────────────────────────────────────────
 echo ""
-echo -e "${BOLD}${CYAN}══ Résumé de la configuration ══${NC}"
-echo ""
-printf "  %-24s %s\n" "Disque :"           "$INSTALL_DISK"
-printf "  %-24s %s\n" "Filesystem :"       "$INSTALL_FS"
-printf "  %-24s %s\n" "LUKS :"             "$INSTALL_LUKS"
-printf "  %-24s %s\n" "Release Debian :"   "$INSTALL_RELEASE"
-printf "  %-24s %s\n" "Timezone :"         "$INSTALL_TIMEZONE"
-printf "  %-24s %s\n" "Locale :"           "$INSTALL_LOCALE"
-printf "  %-24s %s\n" "Hostname :"         "$INSTALL_HOSTNAME"
-printf "  %-24s %s\n" "Username :"         "$INSTALL_USERNAME"
-printf "  %-24s %s\n" "Copier WiFi :"      "$INSTALL_COPY_WIFI"
-printf "  %-24s %s\n" "Snapshots btrfs :"  "$INSTALL_SNAPSHOTS"
-echo ""
-echo -e "  ${YELLOW}Defaults silencieux appliqués :${NC}"
-printf "  %-24s %s\n" "GTK theme :"        "Adwaita"
-printf "  %-24s %s\n" "Curseur :"          "Adwaita"
-printf "  %-24s %s\n" "Thème couleur :"    "gruvbox"
-printf "  %-24s %s\n" "Neovim :"           "yes"
-printf "  %-24s %s\n" "Plymouth :"         "spinner"
-printf "  %-24s %s\n" "Auto-updates :"     "yes"
-echo ""
+gum style \
+    --border rounded --border-foreground "$C" \
+    --padding "1 3" --margin "1 2" \
+    "$(gum style --bold --foreground "$C" "Résumé de la configuration")" \
+    "" \
+    "$(printf "  %-22s %s" "Disque :"          "$INSTALL_DISK")" \
+    "$(printf "  %-22s %s" "Filesystem :"      "$INSTALL_FS")" \
+    "$(printf "  %-22s %s" "LUKS :"            "$INSTALL_LUKS")" \
+    "$(printf "  %-22s %s" "Release :"         "$INSTALL_RELEASE")" \
+    "$(printf "  %-22s %s" "Timezone :"        "$INSTALL_TIMEZONE")" \
+    "$(printf "  %-22s %s" "Locale :"          "$INSTALL_LOCALE")" \
+    "$(printf "  %-22s %s" "Hostname :"        "$INSTALL_HOSTNAME")" \
+    "$(printf "  %-22s %s" "Username :"        "$INSTALL_USERNAME")" \
+    "$(printf "  %-22s %s" "Copier WiFi :"     "$INSTALL_COPY_WIFI")" \
+    "$(printf "  %-22s %s" "Snapshots btrfs :" "$INSTALL_SNAPSHOTS")" \
+    "" \
+    "$(gum style --foreground 240 "  Defaults : GTK=Adwaita  Curseur=Adwaita  Thème=gruvbox  Plymouth=spinner  Neovim=yes")"
 
-warn "ATTENTION : $INSTALL_DISK sera entièrement effacé lors de l'installation."
 echo ""
-read -rp "$(echo -e "${BLUE}Confirmer et écrire la configuration ?${NC} (y/N) : ")" _confirm
-if [[ ! "${_confirm,,}" =~ ^(y|yes)$ ]]; then
-    echo "Annulé."
-    exit 0
-fi
+gum style --foreground 196 --bold "  ATTENTION : $INSTALL_DISK sera entièrement effacé lors de l'installation."
+echo ""
+_confirm "Confirmer et écrire la configuration ?" --default=false \
+    || { echo "Annulé."; exit 0; }
 
 # ── Écriture install.conf ─────────────────────────────────────────────────────
 cat > "$SCRIPT_DIR/install.conf" << EOF
@@ -269,11 +270,11 @@ chmod 644 "$SCRIPT_DIR/install.conf"
 chmod 600 "$SCRIPT_DIR/.install-passwords"
 
 echo ""
-log "install.conf écrit           : $SCRIPT_DIR/install.conf"
-log ".install-passwords écrit     : $SCRIPT_DIR/.install-passwords (chmod 600)"
+log "install.conf écrit       : $SCRIPT_DIR/install.conf"
+log ".install-passwords écrit : $SCRIPT_DIR/.install-passwords (chmod 600)"
 echo ""
-echo -e "${BOLD}${GREEN}Configuration complète.${NC}"
+gum style --foreground "$C" --bold "Configuration complète."
 echo ""
-echo "Lancer l'installation :"
-echo -e "  ${CYAN}bash debian-install-fresh.sh${NC}"
+gum style --foreground 252 "Lancer l'installation :" \
+    "  bash debian-install-fresh.sh"
 echo ""
