@@ -6,6 +6,10 @@ source "$(dirname "$0")/common_functions.sh"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIGS_DIR="$(cd "$SCRIPTS_DIR/../configs" && pwd)"
 
+# Charger install.conf si disponible (installation chroot ou manuelle)
+[ -f /opt/debian-install-scripts/install.conf ] && source /opt/debian-install-scripts/install.conf
+[ -f "$SCRIPTS_DIR/../install.conf" ] && source "$SCRIPTS_DIR/../install.conf"
+
 echo -e "${GREEN}=== Theme Configuration ===${NC}"
 echo "Configures GTK theme, icons, cursor, Qt5, and Neovim"
 echo ""
@@ -28,12 +32,17 @@ declare -a THEME_PACKAGES=(
 # Cursor theme — try bibata first, fallback to breeze
 CURSOR_PACKAGES=("bibata-cursor-theme" "breeze-cursor-theme")
 
-echo -e "${YELLOW}Install theme packages (arc, papirus, qt5ct, neovim, etc.)? (y/n)${NC}"
-read -r install_theme_pkgs
-while [[ ! "$install_theme_pkgs" =~ ^[YyNn]$ ]]; do
-    echo -e "${YELLOW}Please enter y or n:${NC}"
+if [ -n "${INSTALL_SETUP_THEME:-}" ]; then
+    install_theme_pkgs="${INSTALL_SETUP_THEME:0:1}"
+    echo "Installation des paquets thème : $INSTALL_SETUP_THEME (depuis install.conf)"
+else
+    echo -e "${YELLOW}Install theme packages (arc, papirus, qt5ct, neovim, etc.)? (y/n)${NC}"
     read -r install_theme_pkgs
-done
+    while [[ ! "$install_theme_pkgs" =~ ^[YyNn]$ ]]; do
+        echo -e "${YELLOW}Please enter y or n:${NC}"
+        read -r install_theme_pkgs
+    done
+fi
 
 if [[ "$install_theme_pkgs" =~ ^[Yy]$ ]]; then
     _APT_CMD apt update
@@ -66,43 +75,52 @@ fi
 
 # --- GTK THEME SELECTION ---
 echo ""
-echo -e "${YELLOW}Select GTK theme:${NC}"
-echo "  1) Arc-Dark   (flat, dark)"
-echo "  2) Arc        (flat, light)"
-echo "  3) Numix-Dark (rounded, dark)"
-echo "  4) Adwaita    (GNOME default)"
-read -r gtk_choice
-while [[ ! "$gtk_choice" =~ ^[1-4]$ ]]; do
-    echo -e "${YELLOW}Please enter 1-4:${NC}"
+if [ -n "${INSTALL_GTK_THEME:-}" ]; then
+    GTK_THEME="$INSTALL_GTK_THEME"
+    echo -e "${GREEN}GTK theme depuis install.conf : $GTK_THEME${NC}"
+else
+    echo -e "${YELLOW}Select GTK theme:${NC}"
+    echo "  1) Arc-Dark   (flat, dark)"
+    echo "  2) Arc        (flat, light)"
+    echo "  3) Numix-Dark (rounded, dark)"
+    echo "  4) Adwaita    (GNOME default)"
     read -r gtk_choice
-done
-
-case "$gtk_choice" in
-    1) GTK_THEME="Arc-Dark" ;;
-    2) GTK_THEME="Arc" ;;
-    3) GTK_THEME="Numix-Dark" ;;
-    4) GTK_THEME="Adwaita" ;;
-esac
+    while [[ ! "$gtk_choice" =~ ^[1-4]$ ]]; do
+        echo -e "${YELLOW}Please enter 1-4:${NC}"
+        read -r gtk_choice
+    done
+    case "$gtk_choice" in
+        1) GTK_THEME="Arc-Dark" ;;
+        2) GTK_THEME="Arc" ;;
+        3) GTK_THEME="Numix-Dark" ;;
+        4) GTK_THEME="Adwaita" ;;
+    esac
+fi
 
 ICON_THEME="Papirus-Dark"
 
 # --- CURSOR THEME SELECTION ---
 echo ""
-echo -e "${YELLOW}Select cursor theme:${NC}"
-echo "  1) Bibata-Modern-Classic  (modern, compact)"
-echo "  2) Breeze                 (KDE default)"
-echo "  3) Adwaita                (GNOME default)"
-read -r cursor_choice
-while [[ ! "$cursor_choice" =~ ^[1-3]$ ]]; do
-    echo -e "${YELLOW}Please enter 1-3:${NC}"
+if [ -n "${INSTALL_CURSOR_THEME:-}" ]; then
+    CURSOR_THEME="$INSTALL_CURSOR_THEME"
+    CURSOR_SIZE="${INSTALL_CURSOR_SIZE:-24}"
+    echo -e "${GREEN}Curseur depuis install.conf : $CURSOR_THEME (taille $CURSOR_SIZE)${NC}"
+else
+    echo -e "${YELLOW}Select cursor theme:${NC}"
+    echo "  1) Bibata-Modern-Classic  (modern, compact)"
+    echo "  2) Breeze                 (KDE default)"
+    echo "  3) Adwaita                (GNOME default)"
     read -r cursor_choice
-done
-
-case "$cursor_choice" in
-    1) CURSOR_THEME="Bibata-Modern-Classic" ; CURSOR_SIZE=24 ;;
-    2) CURSOR_THEME="Breeze" ; CURSOR_SIZE=24 ;;
-    3) CURSOR_THEME="Adwaita" ; CURSOR_SIZE=24 ;;
-esac
+    while [[ ! "$cursor_choice" =~ ^[1-3]$ ]]; do
+        echo -e "${YELLOW}Please enter 1-3:${NC}"
+        read -r cursor_choice
+    done
+    case "$cursor_choice" in
+        1) CURSOR_THEME="Bibata-Modern-Classic" ; CURSOR_SIZE=24 ;;
+        2) CURSOR_THEME="Breeze" ; CURSOR_SIZE=24 ;;
+        3) CURSOR_THEME="Adwaita" ; CURSOR_SIZE=24 ;;
+    esac
+fi
 
 echo ""
 echo -e "${GREEN}Applying: GTK=$GTK_THEME | Icons=$ICON_THEME | Cursor=$CURSOR_THEME${NC}"
@@ -205,12 +223,17 @@ fi
 
 # --- NEOVIM SETUP ---
 echo ""
-echo -e "${YELLOW}Set up Neovim with lazy.nvim? (y/n)${NC}"
-read -r setup_nvim
-while [[ ! "$setup_nvim" =~ ^[YyNn]$ ]]; do
-    echo -e "${YELLOW}Please enter y or n:${NC}"
+if [ -n "${INSTALL_NEOVIM_SETUP:-}" ]; then
+    setup_nvim="${INSTALL_NEOVIM_SETUP:0:1}"
+    echo -e "${GREEN}Neovim depuis install.conf : $INSTALL_NEOVIM_SETUP${NC}"
+else
+    echo -e "${YELLOW}Set up Neovim with lazy.nvim? (y/n)${NC}"
     read -r setup_nvim
-done
+    while [[ ! "$setup_nvim" =~ ^[YyNn]$ ]]; do
+        echo -e "${YELLOW}Please enter y or n:${NC}"
+        read -r setup_nvim
+    done
+fi
 
 if [[ "$setup_nvim" =~ ^[Yy]$ ]]; then
     NVIM_CONFIG="$HOME/.config/nvim"
@@ -218,14 +241,18 @@ if [[ "$setup_nvim" =~ ^[Yy]$ ]]; then
 
     # Guard against stow-managed config
     if [ -d "$NVIM_CONFIG" ]; then
-        echo -e "${YELLOW}~/.config/nvim already exists (may be stow-managed).${NC}"
-        echo -e "${YELLOW}Overwrite? (y/n)${NC}"
-        read -r overwrite_nvim
-        while [[ ! "$overwrite_nvim" =~ ^[YyNn]$ ]]; do
-            echo -e "${YELLOW}Please enter y or n:${NC}"
+        if [ -n "${INSTALL_NEOVIM_SETUP:-}" ]; then
+            echo -e "${YELLOW}~/.config/nvim existe déjà — écrasement (install.conf).${NC}"
+        else
+            echo -e "${YELLOW}~/.config/nvim already exists (may be stow-managed).${NC}"
+            echo -e "${YELLOW}Overwrite? (y/n)${NC}"
             read -r overwrite_nvim
-        done
-        [[ "$overwrite_nvim" =~ ^[Nn]$ ]] && PROCEED_NVIM=false
+            while [[ ! "$overwrite_nvim" =~ ^[YyNn]$ ]]; do
+                echo -e "${YELLOW}Please enter y or n:${NC}"
+                read -r overwrite_nvim
+            done
+            [[ "$overwrite_nvim" =~ ^[Nn]$ ]] && PROCEED_NVIM=false
+        fi
     fi
 
     if [[ "$PROCEED_NVIM" == true ]]; then

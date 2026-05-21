@@ -27,11 +27,15 @@ if [ "$EUID" -ne 0 ]; then
     error "Please run as root"
 fi
 
-# ── Load install.conf if present ──────────────────────────────────────────────
+# ── Load install.conf and .install-passwords if present ───────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "$SCRIPT_DIR/install.conf" ]; then
     log "Loading configuration from install.conf..."
     source "$SCRIPT_DIR/install.conf"
+fi
+if [ -f "$SCRIPT_DIR/.install-passwords" ]; then
+    log "Loading passwords from .install-passwords..."
+    source "$SCRIPT_DIR/.install-passwords"
 fi
 
 # Ensure password variables are always defined (even if empty)
@@ -250,6 +254,8 @@ log "Copying install scripts to /opt/debian-install-scripts..."
 mkdir -p /mnt/opt
 cp -r "$SCRIPT_DIR" /mnt/opt/debian-install-scripts
 chmod -R 755 /mnt/opt/debian-install-scripts
+# Ne pas copier les secrets vers le nouveau système
+rm -f /mnt/opt/debian-install-scripts/.install-passwords
 
 # ── Write secrets for chroot (shredded by chroot_setup.sh) ───────────────────
 mkdir -p /mnt/tmp
@@ -270,5 +276,8 @@ arch-chroot /mnt ./setup.sh "$RELEASE"
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 rm -f /mnt/setup.sh /mnt/selected_disk
+
+# Détruire les secrets du LiveCD après le chroot
+[ -f "$SCRIPT_DIR/.install-passwords" ] && shred -u "$SCRIPT_DIR/.install-passwords"
 
 log "Installation completed! You can now reboot into your new system."

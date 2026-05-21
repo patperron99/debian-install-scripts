@@ -8,6 +8,11 @@ set -uo pipefail
 
 source "$(dirname "$0")/common_functions.sh"
 
+_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -f /opt/debian-install-scripts/install.conf ] && source /opt/debian-install-scripts/install.conf
+[ -f "$_SCRIPTS_DIR/../install.conf" ] && source "$_SCRIPTS_DIR/../install.conf"
+unset _SCRIPTS_DIR
+
 echo -e "${GREEN}=== Plymouth Boot Splash Setup ===${NC}"
 echo "Configures a visual splash screen during system boot."
 echo ""
@@ -33,21 +38,28 @@ done
 
 echo ""
 
-# --- PROMPT USER TO SELECT THEME ---
-echo "Select a theme (enter number):"
-for i in "${!THEMES[@]}"; do
-    echo "  $((i+1))) ${THEMES[$i]}"
-done
+# --- SELECT THEME ---
 echo ""
-
-read -p "Theme (1-${#THEMES[@]}): " theme_choice
-
-if ! [[ "$theme_choice" =~ ^[0-9]+$ ]] || ((theme_choice < 1 || theme_choice > ${#THEMES[@]})); then
-    echo -e "${YELLOW}Invalid choice. Skipping Plymouth theme configuration.${NC}"
-    exit 0
+if [ -n "${INSTALL_PLYMOUTH_THEME:-}" ] && \
+   printf '%s\n' "${THEMES[@]}" | grep -qx "$INSTALL_PLYMOUTH_THEME"; then
+    SELECTED_THEME="$INSTALL_PLYMOUTH_THEME"
+    echo -e "${GREEN}Thème Plymouth depuis install.conf : $SELECTED_THEME${NC}"
+else
+    if [ -n "${INSTALL_PLYMOUTH_THEME:-}" ]; then
+        echo -e "${YELLOW}Thème '$INSTALL_PLYMOUTH_THEME' introuvable — sélection manuelle.${NC}"
+    fi
+    echo "Select a theme (enter number):"
+    for i in "${!THEMES[@]}"; do
+        echo "  $((i+1))) ${THEMES[$i]}"
+    done
+    echo ""
+    read -p "Theme (1-${#THEMES[@]}): " theme_choice
+    if ! [[ "$theme_choice" =~ ^[0-9]+$ ]] || ((theme_choice < 1 || theme_choice > ${#THEMES[@]})); then
+        echo -e "${YELLOW}Invalid choice. Skipping Plymouth theme configuration.${NC}"
+        exit 0
+    fi
+    SELECTED_THEME="${THEMES[$((theme_choice - 1))]}"
 fi
-
-SELECTED_THEME="${THEMES[$((theme_choice - 1))]}"
 echo -e "${GREEN}Selected theme: $SELECTED_THEME${NC}"
 echo ""
 
