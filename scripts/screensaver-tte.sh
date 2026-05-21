@@ -27,7 +27,7 @@ lock_and_cleanup() {
     kill "$TTE_PID"   2>/dev/null
     kill "$WATCH_PID" 2>/dev/null
     stty "$OLD_TTY"   2>/dev/null
-    swaymsg exec -- hyprlock
+    pgrep -x hyprlock &>/dev/null || swaymsg exec -- hyprlock
     exit 0
 }
 

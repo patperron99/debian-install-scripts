@@ -1,6 +1,9 @@
 #!/bin/bash
 # screensaver-launch.sh — Launch TTE screensaver on all active Sway outputs
 
+# Never launch screensaver while the lock screen is active
+pgrep -x hyprlock &>/dev/null && exit 0
+
 CONTENT_FILE="$HOME/.config/screensaver/content.txt"
 
 # Calculate font size so the content fills ~65% of the output resolution.
@@ -55,13 +58,19 @@ for output in "${OUTPUTS[@]}"; do
     FONT_SIZE=$(calc_font_size "$output")
 
     if [[ "$FONT_SIZE" -gt 0 ]]; then
-        kitty --class screensaver \
-            --override "font_family=JetBrains Mono" \
-            --override "font_size=${FONT_SIZE}" \
-            bash ~/.local/bin/screensaver-tte.sh &
+        (
+            kitty --class screensaver \
+                --override "font_family=JetBrains Mono" \
+                --override "font_size=${FONT_SIZE}" \
+                bash ~/.local/bin/screensaver-tte.sh
+            pgrep -x hyprlock &>/dev/null || swaymsg exec -- hyprlock
+        ) &
     else
-        kitty --class screensaver \
-            bash ~/.local/bin/screensaver-tte.sh &
+        (
+            kitty --class screensaver \
+                bash ~/.local/bin/screensaver-tte.sh
+            pgrep -x hyprlock &>/dev/null || swaymsg exec -- hyprlock
+        ) &
     fi
 
     sleep 0.5

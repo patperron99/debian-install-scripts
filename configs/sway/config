@@ -60,11 +60,11 @@ exec swayidle -w \
         resume   'bash ~/.local/bin/screensaver-stop.sh' \
     timeout 300  'brightnessctl -s set 10%' \
         resume   'brightnessctl -r' \
-    timeout 600  'bash ~/.local/bin/screensaver-stop.sh; hyprlock' \
+    timeout 600  'bash ~/.local/bin/screensaver-lock.sh' \
     timeout 900  'swaymsg "output * dpms off"' \
         resume   'swaymsg "output * dpms on"' \
     timeout 1800 'systemctl suspend' \
-    before-sleep 'hyprlock'
+    before-sleep 'pgrep -x hyprlock || hyprlock'
 
 # ── Window Rules ──────────────────────────────────────────────────────────────
 for_window [app_id="org.gnome.Calculator"] floating enable
