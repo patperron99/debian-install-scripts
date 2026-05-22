@@ -152,7 +152,6 @@ echo ""
 echo -e "${YELLOW}[DEFERRED] The following require a running Sway session — run after first login:${NC}"
 echo "  Multi-monitor:  bash $SCRIPTS_DIR/setup-multimonitor.sh"
 echo "  Wallpaper pick: bash $SCRIPTS_DIR/setup-wallpaper.sh"
-echo "  Zen browser:    flatpak install -y flathub app.zen_browser.zen"
 
 section "Postinstall complete"
 echo "Sway configured for user: $USERNAME"

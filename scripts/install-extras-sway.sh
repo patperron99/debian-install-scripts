@@ -74,20 +74,6 @@ if check_package "gnome-calculator"; then
     fi
 fi
 
-# ─── FLATPAK: Flathub + Zen browser ───────────────────────────────────────────
-echo ""
-echo "Setting up Flatpak..."
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
-if [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ] || [ "$EUID" -ne 0 ]; then
-    if ! flatpak install -y flathub app.zen_browser.zen 2>/dev/null; then
-        echo -e "${YELLOW}Failed to install Zen browser (skipping)${NC}"
-        FAILED_PACKAGES+=("zen-browser-flatpak")
-    fi
-else
-    echo -e "${YELLOW}[DEFERRED] Zen browser Flatpak install requires a user session.${NC}"
-    echo "  Run after login: flatpak install -y flathub app.zen_browser.zen"
-fi
-
 # ─── NERD FONTS ───────────────────────────────────────────────────────────────
 echo ""
 echo "Installing Nerd Fonts (JetBrainsMono, FiraCode, Hack)..."

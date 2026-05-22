@@ -5,7 +5,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 if ! command -v tte &>/dev/null; then
     echo "terminaltexteffects not found"
-    echo "Run: pip install --user --break-system-packages terminaltexteffects"
+    echo "Run: pipx install terminaltexteffects"
     sleep 5
     exit 1
 fi

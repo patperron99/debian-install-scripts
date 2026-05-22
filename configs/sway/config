@@ -82,7 +82,7 @@ for_window [app_id="screensaver"] fullscreen enable, border none
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+e exec $term -e yazi
-bindsym $mod+b exec flatpak run app.zen_browser.zen
+bindsym $mod+b exec zen
 bindsym $mod+shift+a exec pavucontrol
 bindsym $mod+Shift+s exec chromium --app=https://app.slack.com/client --user-data-dir=$HOME/.config/chromium-slack --class=Slack
 

@@ -9,11 +9,17 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 CHECK_MODE=0
-if [ "${1:-}" = "--check" ]; then
-    CHECK_MODE=1
-fi
+INSTALL_USER=""
 
-INSTALL_USER="${SUDO_USER:-$USER}"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --check) CHECK_MODE=1 ;;
+        --user)  shift; INSTALL_USER="$1" ;;
+    esac
+    shift
+done
+
+INSTALL_USER="${INSTALL_USER:-${SUDO_USER:-$USER}}"
 INSTALL_HOME="/home/$INSTALL_USER"
 BIN_DIR="$INSTALL_HOME/.local/bin"
 mkdir -p "$BIN_DIR"
@@ -167,12 +173,79 @@ check_spf() {
     fi
 }
 
+# ─── zen browser ─────────────────────────────────────────────────────────────
+
+install_zen() {
+    case "$ARCH" in
+        x86_64)  asset="zen.linux-x86_64.tar.xz" ;;
+        aarch64) asset="zen.linux-aarch64.tar.xz" ;;
+        *) return ;;
+    esac
+    local url tmp_archive tmp_dir zen_src zen_dir
+    zen_dir="$INSTALL_HOME/.local/share/zen-browser"
+    url=$(curl -s https://api.github.com/repos/zen-browser/desktop/releases/latest \
+        | python3 -c "import sys,json; r=json.load(sys.stdin); \
+          print(next(a['browser_download_url'] for a in r['assets'] if a['name']=='$asset'))" 2>/dev/null)
+    [ -z "$url" ] && return
+    tmp_archive=$(mktemp /tmp/zen-XXXXXX.tar.xz)
+    tmp_dir=$(mktemp -d)
+    if ! curl -fsSL --connect-timeout 15 --max-time 300 -o "$tmp_archive" "$url" 2>/dev/null; then
+        rm -f "$tmp_archive"; rm -rf "$tmp_dir"; return
+    fi
+    if ! tar -xf "$tmp_archive" -C "$tmp_dir" 2>/dev/null; then
+        rm -f "$tmp_archive"; rm -rf "$tmp_dir"; return
+    fi
+    zen_src=$(find "$tmp_dir" -maxdepth 1 -mindepth 1 -type d | head -1)
+    if [ -z "$zen_src" ] || [ ! -f "$zen_src/zen" ]; then
+        rm -f "$tmp_archive"; rm -rf "$tmp_dir"; return
+    fi
+    rm -rf "$zen_dir"
+    mv "$zen_src" "$zen_dir"
+    ln -sf "$zen_dir/zen" "$BIN_DIR/zen"
+    local icon_src
+    icon_src=$(find "$zen_dir" -name "default128.png" | head -1)
+    if [ -n "$icon_src" ]; then
+        mkdir -p "$INSTALL_HOME/.local/share/icons/hicolor/128x128/apps"
+        cp "$icon_src" "$INSTALL_HOME/.local/share/icons/hicolor/128x128/apps/zen-browser.png"
+    fi
+    mkdir -p "$INSTALL_HOME/.local/share/applications"
+    cat > "$INSTALL_HOME/.local/share/applications/zen-browser.desktop" << EOF
+[Desktop Entry]
+Name=Zen Browser
+Exec=$zen_dir/zen %u
+Icon=zen-browser
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+StartupWMClass=zen-browser
+EOF
+    chown -R "$INSTALL_USER:$INSTALL_USER" "$zen_dir" "$BIN_DIR/zen" \
+        "$INSTALL_HOME/.local/share/icons" \
+        "$INSTALL_HOME/.local/share/applications/zen-browser.desktop" 2>/dev/null || true
+    rm -f "$tmp_archive"; rm -rf "$tmp_dir"
+}
+
+check_zen() {
+    command -v zen &>/dev/null || { install_zen; return; }
+    local installed latest
+    installed=$(zen --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+\S*' | head -1)
+    latest=$(latest_tag "zen-browser/desktop")
+    if needs_update "$installed" "$latest"; then
+        UPDATE_COUNT=$((UPDATE_COUNT + 1))
+        UPDATE_NAMES+=("zen→$latest")
+        [ "$CHECK_MODE" -eq 0 ] && { echo -e "${YELLOW}Updating zen $installed → $latest${NC}"; install_zen; echo -e "${GREEN}✓ zen updated${NC}"; }
+    else
+        [ "$CHECK_MODE" -eq 0 ] && echo -e "${GREEN}✓ zen $installed (up to date)${NC}"
+    fi
+}
+
 # ─── main ─────────────────────────────────────────────────────────────────────
 
 check_bluetui
 check_impala
 check_yazi
 check_spf
+check_zen
 
 if [ "$CHECK_MODE" -eq 1 ]; then
     echo "$UPDATE_COUNT ${UPDATE_NAMES[*]}"

@@ -183,7 +183,7 @@ systemctl enable --now power-profiles-daemon
 
 echo ""
 echo "Installing terminaltexteffects (TTE screensaver)..."
-sudo -u "$INSTALL_USER" pip install --break-system-packages terminaltexteffects
+runuser -l "$INSTALL_USER" -c "pipx install terminaltexteffects"
 echo -e "${GREEN}✓ terminaltexteffects installed${NC}"
 
 echo ""
