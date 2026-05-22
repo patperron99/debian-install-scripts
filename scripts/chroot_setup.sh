@@ -43,7 +43,8 @@ echo "127.0.1.1 $INSTALL_HOSTNAME.localdomain $INSTALL_HOSTNAME" >> /etc/hosts
 
 # ── Essential packages ────────────────────────────────────────────────────────
 apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-linux-nonfree \
-    firmware-iwlwifi firmware-realtek \
+    firmware-iwlwifi firmware-realtek firmware-misc-nonfree \
+    intel-microcode amd64-microcode \
     sudo vim bash-completion grub-efi-amd64 network-manager btrfs-progs \
     cryptsetup openssh-server git plymouth plymouth-themes wget curl \
     wpasupplicant iw rfkill pciutils usbutils build-essential dkms

@@ -60,6 +60,33 @@ if command -v flatpak &>/dev/null; then
     fi
 fi
 
+# ── Firmware (fwupd) ──────────────────────────────────────────────────────────
+
+if command -v fwupdmgr &>/dev/null; then
+    _section "Firmware"
+    gum spin --title "Rafraîchissement des métadonnées firmware..." -- \
+        sudo fwupdmgr refresh --force 2>/dev/null || true
+
+    FWUPD_OUTPUT=$(sudo fwupdmgr get-updates 2>/dev/null) || true
+
+    if [ -z "$FWUPD_OUTPUT" ] || echo "$FWUPD_OUTPUT" | grep -qi "no updates"; then
+        _ok "Aucune mise à jour firmware disponible."
+    else
+        FWUPD_COUNT=$(echo "$FWUPD_OUTPUT" | grep -c "^Device ID\|^.*:" 2>/dev/null || echo "?")
+        _warn "Mises à jour firmware disponibles."
+        echo ""
+        echo "$FWUPD_OUTPUT"
+        echo ""
+        if gum confirm \
+            --selected.foreground 0 --selected.background "$C" \
+            --unselected.foreground 252 \
+            "Installer les mises à jour firmware ?"; then
+            sudo fwupdmgr update -y
+            _ok "Firmware mis à jour. Un redémarrage peut être requis."
+        fi
+    fi
+fi
+
 # ── Binaires GitHub ───────────────────────────────────────────────────────────
 
 _section "Binaires GitHub"
