@@ -68,6 +68,8 @@ RoutePriorityOffset=300
 EOF
 
 systemctl enable iwd
+systemctl enable systemd-resolved
+ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 # ── LUKS / crypttab ───────────────────────────────────────────────────────────
 if findfs LABEL=Debian 2>/dev/null | xargs -I{} cryptsetup isLuks {} 2>/dev/null; then

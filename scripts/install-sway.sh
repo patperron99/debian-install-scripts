@@ -185,6 +185,12 @@ systemctl enable getty@tty1.service 2>/dev/null || true
 systemctl daemon-reload 2>/dev/null || true
 echo -e "${GREEN}✓ Autologin configured for $INSTALL_USER on TTY1${NC}"
 
+echo ""
+echo "Removing NetworkManager (replaced by iwd standalone)..."
+apt-get purge -y network-manager
+systemctl daemon-reload
+echo -e "${GREEN}✓ NetworkManager removed — iwd manages WiFi${NC}"
+
 print_summary
 
 echo ""
