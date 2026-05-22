@@ -105,6 +105,7 @@ declare -a PACKAGES=(
   "wget"
   "unzip"
   "fzf"
+  "gum"
   "avahi-daemon"
   "pipx"
 
