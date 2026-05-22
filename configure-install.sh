@@ -277,8 +277,7 @@ echo ""
 log "install.conf écrit       : $SCRIPT_DIR/install.conf"
 log ".install-passwords écrit : $SCRIPT_DIR/.install-passwords (chmod 600)"
 echo ""
-gum style --foreground "$C" --bold "Configuration complète."
+gum style --foreground "$C" --bold "Configuration complète. Démarrage de l'installation..."
 echo ""
-gum style --foreground 252 "Lancer l'installation :" \
-    "  bash debian-install-fresh.sh"
-echo ""
+
+exec bash "$SCRIPT_DIR/debian-install-fresh.sh"
