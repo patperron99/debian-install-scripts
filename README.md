@@ -4,25 +4,30 @@ Automation suite for fresh Debian installations with a Wayland-pure **Sway** des
 
 Targets **Debian Testing (Forky)** — all packages from APT, zero compilation required.
 
-> **Note:** For legacy Hyprland support, see `docs/legacy/README.md`
+> For legacy Hyprland support, see `docs/legacy/README.md`
 
 ---
 
 ## Installation
 
-### Step 1 — Boot from Debian LiveCD
+### Step 1 — Boot from Debian Live USB (XFCE)
+
+Connect to WiFi via NetworkManager, then:
 
 ```bash
 apt install git
 git clone https://github.com/patperron99/debian-install-scripts
 cd debian-install-scripts
 sudo bash debian-install-fresh.sh
-# Reboot into the new system
 ```
 
-`debian-install-fresh.sh` handles disk setup: LUKS encryption, Btrfs subvolumes (`@`, `@home`, `@snapshots`), debootstrap, GRUB, crypttab, and fstab.
+`debian-install-fresh.sh` handles disk setup: LUKS encryption, Btrfs subvolumes (`@`, `@home`, `@snapshots`), debootstrap, GRUB, crypttab, and fstab. It offers to copy your WiFi profile from the live USB so the new system has internet on first boot.
+
+Reboot into the new system.
 
 ### Step 2 — First boot (minimal Debian console)
+
+WiFi is active via iwd + NetworkManager (copied from live USB). Clone the repo and run the postinstall:
 
 ```bash
 sudo apt install git
@@ -31,14 +36,14 @@ cd debian-install-scripts
 bash postinstall-sway.sh
 ```
 
-The interactive menu lets you run everything at once or step by step:
+Interactive menu — run everything at once or step by step:
 
 ```
   a) Install everything (recommended)
   ────────────────────────────────────
   1) Core + Sway packages
   2) Deploy configuration files
-  3) Extras  (neovim, tmux, fonts, bluetui)
+  3) Extras  (neovim, tmux, fonts, yazi, bluetui)
   4) Theme   (GTK, cursor, Neovim/LazyVim)
   5) Wallpapers
   6) Auto-update timer
@@ -49,7 +54,7 @@ The interactive menu lets you run everything at once or step by step:
   10) Verify installation
 ```
 
-Reboot when done — autologin on TTY1, **Sway** starts automatically.
+At the end of step 1, NetworkManager is removed and **iwd takes over WiFi standalone** (use `impala` as TUI). Reboot when done — autologin on TTY1, Sway starts automatically.
 
 ---
 
@@ -57,10 +62,10 @@ Reboot when done — autologin on TTY1, **Sway** starts automatically.
 
 ```
 debian-install-fresh.sh
-  └── postinstall-sway.sh                 # Interactive menu
-        ├── scripts/install-sway.sh       # Step 1: Core Sway packages
-        ├── scripts/setup-sway-config.sh  # Step 2: Deploy configs
-        ├── scripts/install-extras-sway.sh # Step 3: Dev tools, fonts, bluetui
+  └── postinstall-sway.sh                  # Interactive menu
+        ├── scripts/install-sway.sh        # Step 1: Core Sway packages + remove NM
+        ├── scripts/setup-sway-config.sh   # Step 2: Deploy configs
+        ├── scripts/install-extras-sway.sh # Step 3: Dev tools, fonts, yazi, bluetui
         ├── scripts/setup-theme.sh         # Step 4: GTK + cursor + Neovim
         ├── scripts/fetch-wallpapers.sh    # Step 5: Download wallpapers
         ├── scripts/setup-auto-updates.sh  # Step 6: APT timers + Waybar
@@ -85,11 +90,11 @@ scripts/verify-install.sh        # PASS/FAIL diagnostic
 **Helper scripts installed to `~/.local/bin/`:**
 
 ```
-powermenu.sh       # Super key       — power menu (reboot/suspend/logout)
-wallpaper-next.sh  # SUPER+W         — cycle wallpaper
-screensaver-launch.sh # SUPER+S       — start terminal screensaver
-theme-picker.sh    # SUPER+T         — live theme switcher
-check-updates.sh   # Waybar module   — APT + Flatpak update count
+powermenu.sh          Super+Escape   — power menu (reboot/suspend/logout/lock)
+wallpaper-next.sh     Super+W        — cycle wallpaper
+theme-picker.sh       Super+Shift+T  — live theme switcher
+check-updates.sh      Waybar module  — APT update count
+screensaver-launch.sh Super+Shift+L  — start terminal screensaver
 ```
 
 ---
@@ -99,7 +104,7 @@ check-updates.sh   # Waybar module   — APT + Flatpak update count
 `setup-sway-config.sh` copies all configs from `configs/` into `~/.config/`:
 
 | Source | Destination | Description |
-|---|---|---|
+|--------|-------------|-------------|
 | `configs/sway/` | `~/.config/sway/` | Sway — main config |
 | `configs/waybar/` | `~/.config/waybar/` | Status bar |
 | `configs/wofi/` | `~/.config/wofi/` | App launcher |
@@ -119,11 +124,99 @@ check-updates.sh   # Waybar module   — APT + Flatpak update count
 
 ✅ **Wayland-pure** — No X11, no GNOME/KDE bloat  
 ✅ **APT-only** — All packages from Debian Testing, zero compilation  
+✅ **iwd standalone** — Lightweight WiFi daemon, managed via `impala` TUI  
 ✅ **Disk encryption** — Full LUKS + Btrfs setup  
 ✅ **Snapshots** — Automated Btrfs snapshots with GRUB boot menu  
-✅ **TUI-first** — Pulsemixer (audio), bluetui (Bluetooth), lf (files)  
+✅ **TUI-first** — pulsemixer (audio), bluetui (Bluetooth), yazi (files), impala (WiFi)  
 ✅ **Modular** — Install step-by-step or all at once  
 ✅ **Idempotent** — Safe to re-run any script  
+
+---
+
+## Keyboard Shortcuts
+
+### Applications
+
+| Shortcut | Action |
+|----------|--------|
+| Super+Return | Terminal (kitty) |
+| Super+D | App launcher (wofi) |
+| Super+E | File manager (yazi) |
+| Super+B | Browser (Zen) |
+| Super+Shift+S | Slack |
+| Super+Shift+A | Audio mixer (pulsemixer) |
+
+### Window Management
+
+| Shortcut | Action |
+|----------|--------|
+| Super+Q | Close window |
+| Super+F | Fullscreen toggle |
+| Super+V | Floating toggle |
+| Super+J | Layout toggle (split/tabbed) |
+| Super+Shift+E | Exit Sway |
+| Super+Shift+C | Reload config |
+
+### Focus & Move
+
+| Shortcut | Action |
+|----------|--------|
+| Super+Arrow | Focus window in direction |
+| Super+Shift+Arrow | Move window in direction |
+| Super+- | Shrink window |
+| Super+= | Grow window |
+
+### Workspaces
+
+| Shortcut | Action |
+|----------|--------|
+| Super+1–0 | Switch to workspace 1–10 |
+| Super+Shift+1–0 | Move window to workspace 1–10 |
+| Super+Scroll | Previous / next workspace |
+
+### Scratchpad
+
+| Shortcut | Action |
+|----------|--------|
+| Super+Shift+- | Send window to scratchpad |
+| Super+Ctrl+- | Show scratchpad |
+
+### Lock / Power
+
+| Shortcut | Action |
+|----------|--------|
+| Super+L | Lock screen (hyprlock) |
+| Super+Shift+L | Screensaver |
+| Super+Escape | Power menu (shutdown/reboot/suspend/logout) |
+
+### Clipboard & Screenshots
+
+| Shortcut | Action |
+|----------|--------|
+| Super+C | Clipboard history picker |
+| Super+P | Screenshot area → clipboard |
+| Super+Shift+P | Screenshot fullscreen → clipboard |
+| Super+Ctrl+P | Screenshot fullscreen → file |
+| Super+Shift+R | Toggle screen recording (wf-recorder) |
+
+### Wallpaper & Theme
+
+| Shortcut | Action |
+|----------|--------|
+| Super+W | Cycle wallpaper |
+| Super+Shift+T | Live theme switcher |
+
+### Media & Brightness
+
+| Shortcut | Action |
+|----------|--------|
+| XF86AudioRaiseVolume | Volume +5% |
+| XF86AudioLowerVolume | Volume -5% |
+| XF86AudioMute | Toggle mute |
+| XF86AudioPlay | Play/pause |
+| XF86AudioNext / Prev | Next / previous track |
+| XF86MonBrightnessUp | Brightness +5% |
+| XF86MonBrightnessDown | Brightness -5% |
 
 ---
 
@@ -131,7 +224,7 @@ check-updates.sh   # Waybar module   — APT + Flatpak update count
 
 ### `debian-install-fresh.sh`
 
-Disk setup from a LiveCD. Prompts for target disk, sets up LUKS, Btrfs subvolumes, installs a minimal Debian base via debootstrap, configures GRUB, crypttab, and fstab.
+Disk setup from a Live USB. Prompts for target disk, sets up LUKS, Btrfs subvolumes (`@`, `@home`, `@snapshots`), installs a minimal Debian base via debootstrap, configures GRUB, crypttab, and fstab. Optionally copies WiFi profiles from the live system.
 
 ```bash
 sudo bash debian-install-fresh.sh
@@ -151,9 +244,9 @@ bash postinstall-sway.sh
 
 ### `scripts/install-sway.sh`
 
-Installs the full Sway ecosystem from APT Testing.
+Installs the full Sway ecosystem from APT Testing, then removes NetworkManager (iwd takes over standalone WiFi management).
 
-**Packages:** sway, swaybg, swayidle, waybar, wofi, mako-notifier, grim, slurp, wf-recorder, kitty, pipewire, wireplumber, pulsemixer, kanshi, udiskie, brightnessctl, playerctl, iwd, bluez, and more.
+**Packages:** sway, swaybg, swayidle, waybar, wofi, mako-notifier, grim, slurp, wf-recorder, kitty, pipewire, wireplumber, pulsemixer, kanshi, udiskie, brightnessctl, playerctl, bluez, hyprlock, chromium, and more.
 
 ```bash
 bash scripts/install-sway.sh
@@ -173,12 +266,14 @@ bash scripts/setup-sway-config.sh
 
 ### `scripts/install-extras-sway.sh`
 
-Installs developer tools and sets up language runtimes:
+Installs developer tools, TUI utilities, and fonts:
 
-- **Packages:** neovim, tmux, cmake, ripgrep, fd-find, fastfetch, jq, shellcheck, and more
+- **Packages:** neovim, tmux, ripgrep, fd-find, bat, zoxide, fastfetch, jq, shellcheck, fwupd, nvme-cli, smartmontools, and yazi preview deps
+- **Build tools:** cmake, meson, ninja-build
 - **Nerd Fonts:** JetBrainsMono, FiraCode, Hack (v3.2.1 from GitHub releases)
-- **bluetui:** Python TUI Bluetooth manager (via pip)
+- **GitHub binaries:** bluetui, impala, yazi, superfile (spf), zen browser
 - **TPM:** Tmux Plugin Manager cloned to `~/.config/tmux/plugins/tpm`
+- **VPN:** pritunl-client (optional, latest .deb from GitHub)
 
 ```bash
 bash scripts/install-extras-sway.sh
@@ -190,7 +285,7 @@ bash scripts/install-extras-sway.sh
 
 Configures GTK theme, icon theme, cursor, Qt5ct, and Neovim.
 
-**GTK choices:** Arc-Dark, Arc, Numix-Dark, Adwaita  
+**GTK choices:** Arc-Dark, Arc, Adwaita  
 **Cursor choices:** Bibata-Modern-Classic, Breeze, Adwaita  
 **Icons:** Papirus-Dark  
 **Neovim:** LazyVim base + Nord colorscheme
@@ -219,7 +314,7 @@ bash scripts/setup-auto-updates.sh
 
 ### `scripts/setup-snapshots.sh`
 
-Configures Btrfs snapshots with snapper, APT hooks, and systemd timers. Requires Btrfs filesystem (created by `debian-install-fresh.sh`).
+Configures Btrfs snapshots with snapper, APT hooks, and systemd timers. Requires Btrfs filesystem.
 
 ```bash
 bash scripts/setup-snapshots.sh
@@ -277,36 +372,30 @@ bash scripts/verify-install.sh
 
 ---
 
-## Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| Super | Power menu (wlogout) |
-| Super + W | Cycle wallpaper |
-| Super + S | Terminal screensaver |
-| Super + T | Live theme switcher |
-| Super + 1–10 | Switch workspace |
-| Super + Shift + 1–10 | Move window to workspace |
-
----
-
 ## Troubleshooting
 
 ### No sound
 ```bash
-pulsemixer   # TUI audio mixer
+pulsemixer        # TUI audio mixer  (Super+Shift+A)
 pactl list short sinks
 ```
 
 ### Bluetooth issues
 ```bash
-bluetui      # TUI Bluetooth manager
+bluetui           # TUI Bluetooth manager
 systemctl status bluetooth
+```
+
+### WiFi issues
+```bash
+impala            # TUI WiFi manager (iwd)
+iwctl             # iwd interactive CLI
+systemctl status iwd
 ```
 
 ### Monitor not detected
 ```bash
-swaymsg -t get_outputs   # List monitors
+swaymsg -t get_outputs
 bash scripts/setup-multimonitor.sh
 ```
 

@@ -83,7 +83,7 @@ bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+e exec $term -e yazi
 bindsym $mod+b exec zen
-bindsym $mod+shift+a exec pavucontrol
+bindsym $mod+shift+a exec kitty --app-id=pulsemixer -e pulsemixer
 bindsym $mod+Shift+s exec chromium --app=https://app.slack.com/client --user-data-dir=$HOME/.config/chromium-slack --class=Slack
 
 # Window management
