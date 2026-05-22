@@ -18,10 +18,10 @@ Connect to WiFi via NetworkManager, then:
 apt install git
 git clone https://github.com/patperron99/debian-install-scripts
 cd debian-install-scripts
-sudo bash debian-install-fresh.sh
+sudo bash configure-install.sh
 ```
 
-`debian-install-fresh.sh` handles disk setup: LUKS encryption, Btrfs subvolumes (`@`, `@home`, `@snapshots`), debootstrap, GRUB, crypttab, and fstab. It offers to copy your WiFi profile from the live USB so the new system has internet on first boot.
+`configure-install.sh` collects all settings interactively (disk, filesystem, LUKS, hostname, locale, WiFi copy, passwords) then launches `debian-install-fresh.sh` automatically. The install script handles disk partitioning, LUKS encryption, Btrfs subvolumes (`@`, `@home`, `@snapshots`), debootstrap, GRUB, crypttab, and fstab.
 
 Reboot into the new system.
 
