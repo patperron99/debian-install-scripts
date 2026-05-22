@@ -14,33 +14,42 @@ else
 fi
 
 declare -a EXTRA_PACKAGES=(
-    "pipx"
+    # Python
     "python3-pip"
     "python3-venv"
+
+    # Editor + shell tools
     "tmux"
-    "cmake"
-    "meson"
-    "ninja-build"
+    "fd-find"
+    "ripgrep"
+    "jq"
+    "shellcheck"
+    "bat"
+    "zoxide"
+    "fastfetch"
+    "psmisc"
+    "file"
+
+    # Firmware + disk health
     "fwupd"
     "fwupd-signed"
     "nvme-cli"
     "smartmontools"
-    "shellcheck"
-    "npm"
-    "fd-find"
-    "ripgrep"
-    "psmisc"
-    "jq"
-    "fastfetch"
-    # file manager + preview deps
-    "bat"
+
+    # File manager preview deps (yazi)
     "ffmpegthumbnailer"
     "poppler-utils"
     "unar"
     "imagemagick"
     "libimage-exiftool-perl"
-    "zoxide"
     "chafa"
+)
+
+# Build tools — only needed for compiling from source (neovim plugins, etc.)
+declare -a BUILD_PACKAGES=(
+    "cmake"
+    "meson"
+    "ninja-build"
 )
 
 echo -e "${GREEN}=== Extras Installation ===${NC}"
@@ -65,9 +74,25 @@ for pkg in "${EXTRA_PACKAGES[@]}"; do
 done
 
 echo ""
+echo "Installing build tools (cmake, meson, ninja)..."
+for pkg in "${BUILD_PACKAGES[@]}"; do
+    if check_package "$pkg"; then
+        if install_package "$pkg"; then
+            SUCCESSFUL_PACKAGES+=("$pkg")
+        else
+            FAILED_PACKAGES+=("$pkg")
+            echo "Failed to install: $pkg" | tee -a "$LOG_FILE"
+        fi
+    else
+        echo -e "${YELLOW}Package not found in repository: $pkg (skipping)${NC}"
+        FAILED_PACKAGES+=("$pkg")
+    fi
+done
+
+echo ""
 echo "Installing packages from testing (version conflicts with stable)..."
 setup_testing_sources
-apt-get install -y -t testing neovim file
+apt-get install -y -t testing neovim
 echo -e "${GREEN}✓ neovim, file installed from testing${NC}"
 
 if check_package "gnome-calculator"; then
@@ -154,9 +179,6 @@ if [ ! -d "$TPM_DIR" ]; then
 else
     echo -e "${GREEN}TPM already installed${NC}"
 fi
-
-# ─── ENABLE AVAHI ─────────────────────────────────────────────────────────────
-systemctl enable avahi-daemon 2>/dev/null || true
 
 print_summary
 

@@ -45,9 +45,29 @@ echo "127.0.1.1 $INSTALL_HOSTNAME.localdomain $INSTALL_HOSTNAME" >> /etc/hosts
 apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-linux-nonfree \
     firmware-iwlwifi firmware-realtek firmware-misc-nonfree \
     intel-microcode amd64-microcode \
-    sudo vim bash-completion grub-efi-amd64 network-manager btrfs-progs \
+    sudo vim bash-completion grub-efi-amd64 network-manager iwd btrfs-progs \
     cryptsetup openssh-server git plymouth plymouth-themes wget curl \
-    wpasupplicant iw rfkill pciutils usbutils build-essential dkms
+    rfkill pciutils usbutils build-essential dkms unzip
+
+# Configure NetworkManager to use iwd as WiFi backend from first boot
+mkdir -p /etc/NetworkManager/conf.d
+cat > /etc/NetworkManager/conf.d/wifi-backend.conf << 'EOF'
+[device]
+wifi.backend=iwd
+EOF
+
+mkdir -p /etc/iwd
+cat > /etc/iwd/main.conf << 'EOF'
+[General]
+EnableNetworkConfiguration=true
+NameResolvingService=systemd
+
+[Network]
+EnableIPv6=true
+RoutePriorityOffset=300
+EOF
+
+systemctl enable iwd
 
 # ── LUKS / crypttab ───────────────────────────────────────────────────────────
 if findfs LABEL=Debian 2>/dev/null | xargs -I{} cryptsetup isLuks {} 2>/dev/null; then

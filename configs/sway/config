@@ -190,5 +190,4 @@ mouse_warping container
 include /etc/sway/config.d/*.conf
 output * bg #282828 solid_color
 
-exec xsettingsd
 exec_always autotiling

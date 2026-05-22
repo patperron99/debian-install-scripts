@@ -61,9 +61,6 @@ declare -a PACKAGES=(
   "pamixer"
   "pulsemixer"
 
-  # Network
-  "iwd"
-
   # Polkit agent (KDE — no GNOME session deps)
   "polkit-kde-agent-1"
 
@@ -83,10 +80,6 @@ declare -a PACKAGES=(
   # Power management
   "power-profiles-daemon"
 
-  # Boot splash
-  "plymouth"
-  "plymouth-themes"
-
   # System utilities
   "brightnessctl"
   "playerctl"
@@ -100,10 +93,6 @@ declare -a PACKAGES=(
   "qt6-wayland"
 
   # Base tools
-  "git"
-  "curl"
-  "wget"
-  "unzip"
   "fzf"
   "gum"
   "avahi-daemon"
@@ -111,9 +100,6 @@ declare -a PACKAGES=(
 
   # Chromium (Slack webapp)
   "chromium"
-
-  # Flatpak (for Zen browser)
-  "flatpak"
 )
 
 echo "Updating package lists..."
@@ -167,17 +153,7 @@ apt-get install -y -t testing hyprlock
 echo -e "${GREEN}✓ hyprlock installed from testing${NC}"
 
 echo ""
-echo "Configuring NetworkManager to use iwd as WiFi backend..."
-mkdir -p /etc/NetworkManager/conf.d
-cat > /etc/NetworkManager/conf.d/wifi-backend.conf << 'EOF'
-[device]
-wifi.backend=iwd
-EOF
-echo -e "${GREEN}✓ NM → iwd backend configured${NC}"
-
-echo ""
 echo "Enabling essential services..."
-systemctl enable iwd
 systemctl enable bluetooth
 systemctl enable avahi-daemon
 systemctl enable --now power-profiles-daemon
@@ -194,20 +170,6 @@ mkdir -p "$INSTALL_HOME/.config/waybar"
 mkdir -p "$INSTALL_HOME/.config/mako"
 mkdir -p "$INSTALL_HOME/.config/kitty"
 chown -R "$INSTALL_USER:$INSTALL_USER" "$INSTALL_HOME/.config"
-
-echo ""
-echo "Configuring iwd for network management..."
-mkdir -p /etc/iwd
-cat <<'EOF' >/etc/iwd/main.conf
-[General]
-EnableNetworkConfiguration=true
-NameResolvingService=systemd
-
-[Network]
-EnableIPv6=true
-RoutePriorityOffset=300
-EOF
-echo -e "${GREEN}✓ iwd configured${NC}"
 
 echo ""
 echo "Configuring TTY1 autologin for $INSTALL_USER..."

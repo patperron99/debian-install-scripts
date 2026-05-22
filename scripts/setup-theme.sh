@@ -19,14 +19,10 @@ SWAY_CONF="$HOME/.config/sway/config"
 # --- PACKAGE INSTALLATION ---
 declare -a THEME_PACKAGES=(
     "arc-theme"
-    "numix-gtk-theme"
     "papirus-icon-theme"
     "qt5ct"
     "adwaita-qt"
     "nwg-look"
-    "xsettingsd"
-    "neovim"
-    "fd-find"
 )
 
 # Cursor theme — try bibata first, fallback to breeze
@@ -150,6 +146,15 @@ EOF
 
 echo -e "${GREEN}Written: gtk-3.0/settings.ini and gtk-4.0/settings.ini${NC}"
 
+# Propagate to dconf/gsettings for GNOME apps
+if command -v gsettings &>/dev/null; then
+    gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-theme "$CURSOR_THEME" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-size "$CURSOR_SIZE" 2>/dev/null || true
+    echo -e "${GREEN}gsettings updated${NC}"
+fi
+
 # --- CURSOR DEFAULT ---
 mkdir -p "$HOME/.icons/default"
 cat > "$HOME/.icons/default/index.theme" << EOF
@@ -160,23 +165,6 @@ Inherits=$CURSOR_THEME
 EOF
 
 echo -e "${GREEN}Written: ~/.icons/default/index.theme${NC}"
-
-# --- XSETTINGSD ---
-mkdir -p "$HOME/.config/xsettingsd"
-cat > "$HOME/.config/xsettingsd/xsettingsd.conf" << EOF
-Net/ThemeName "$GTK_THEME"
-Net/IconThemeName "$ICON_THEME"
-Gtk/CursorThemeName "$CURSOR_THEME"
-Gtk/CursorThemeSize $CURSOR_SIZE
-EOF
-
-echo -e "${GREEN}Written: ~/.config/xsettingsd/xsettingsd.conf${NC}"
-
-# Add xsettingsd to sway autostart if not already present
-if [ -f "$SWAY_CONF" ] && ! grep -q "exec xsettingsd" "$SWAY_CONF"; then
-    printf '\nexec xsettingsd\n' >> "$SWAY_CONF"
-    echo -e "${GREEN}xsettingsd added to sway config${NC}"
-fi
 
 # --- QT5CT ---
 mkdir -p "$HOME/.config/qt5ct"
