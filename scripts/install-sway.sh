@@ -106,7 +106,7 @@ declare -a PACKAGES=(
   "unzip"
   "fzf"
   "avahi-daemon"
-  "python3-pipx"
+  "pipx"
 
   # Chromium (Slack webapp)
   "chromium"

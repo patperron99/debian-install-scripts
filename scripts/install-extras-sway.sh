@@ -14,6 +14,7 @@ else
 fi
 
 declare -a EXTRA_PACKAGES=(
+    "pipx"
     "python3-pip"
     "python3-venv"
     "tmux"
