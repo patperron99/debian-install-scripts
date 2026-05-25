@@ -1,0 +1,404 @@
+#!/usr/bin/env bash
+# disks.sh — Live TUI for managing external drives (replaces GNOME Disks)
+# Dependencies: gum, udisksctl, lsblk, dd, parted, mkfs.*
+
+set -uo pipefail
+
+export GUM_CHOOSE_CURSOR_FOREGROUND="212"
+export GUM_CHOOSE_SELECTED_FOREGROUND="212"
+export GUM_CONFIRM_PROMPT_FOREGROUND="214"
+export GUM_CONFIRM_SELECTED_FOREGROUND="212"
+export GUM_SPIN_SPINNER_FOREGROUND="212"
+
+BOLD=$'\033[1m'
+DIM=$'\033[2m'
+RED=$'\033[31m'
+GREEN=$'\033[32m'
+YELLOW=$'\033[33m'
+CYAN=$'\033[36m'
+WHITE=$'\033[37m'
+RESET=$'\033[0m'
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+fatal()   { gum style --foreground 196 "✗ $*" >&2; exit 1; }
+die()     { gum style --foreground 196 "✗ $*" >&2; return 1; }
+info()    { gum style --foreground 33  "→ $*"; }
+success() { gum style --foreground 76  "✓ $*"; }
+
+pause() {
+    echo ""
+    gum input --placeholder "Press ↵ to return..." --prompt "" > /dev/null 2>&1 || true
+}
+
+# ─── Drive Detection ──────────────────────────────────────────────────────────
+
+# Names of external/removable block devices (USB, MMC/SD, or RM=1)
+external_devs() {
+    lsblk -dpno NAME,TRAN,RM 2>/dev/null \
+        | awk '$1!~/loop|zram/ && ($2=="usb" || $2=="mmc" || $3=="1") {print $1}'
+}
+
+# Names of partitions on a disk (skips the disk itself)
+partition_devs() {
+    lsblk -rpno NAME "$1" 2>/dev/null | tail -n +2
+}
+
+# Single lsblk field for a whole disk
+dev_field() {
+    lsblk -dpno "$2" "$1" 2>/dev/null | head -1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+# Single lsblk field for a partition
+part_field() {
+    lsblk -no "$2" "$1" 2>/dev/null | head -1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+}
+
+# Usage% of a mounted partition (empty if unmounted or unavailable)
+part_usage() {
+    local mp
+    mp=$(part_field "$1" MOUNTPOINT)
+    [[ -z "$mp" ]] && return 0
+    df --output=pcent "$mp" 2>/dev/null | tail -1 | tr -d ' %' || true
+}
+
+# ─── Pickers ──────────────────────────────────────────────────────────────────
+
+pick_external_disk() {
+    local devs
+    devs=$(external_devs)
+    [[ -z "$devs" ]] && { die "No external drives detected."; return 1; }
+
+    local lines=""
+    while IFS= read -r dev; do
+        local size tran model
+        size=$(dev_field  "$dev" SIZE)
+        tran=$(dev_field  "$dev" TRAN);  [[ -z "$tran"  ]] && tran="?"
+        model=$(dev_field "$dev" MODEL); [[ -z "$model" ]] && model="Unknown"
+        lines+=$(printf '%-14s  %-8s  [%-5s]  %s' "$dev" "$size" "$tran" "$model")
+        lines+=$'\n'
+    done <<< "$devs"
+
+    local sel
+    sel=$(printf '%s' "$lines" | grep -v '^$' | gum choose --header "Select a drive:") \
+        || { die "Cancelled."; return 1; }
+    awk '{print $1}' <<< "$sel"
+}
+
+pick_partition() {
+    local disk="$1"
+    local parts
+    parts=$(partition_devs "$disk")
+    [[ -z "$parts" ]] && { die "No partitions found on $disk."; return 1; }
+
+    local lines=""
+    while IFS= read -r part; do
+        local size fs label mp
+        size=$(part_field  "$part" SIZE)
+        fs=$(part_field    "$part" FSTYPE);     [[ -z "$fs"    ]] && fs="—"
+        label=$(part_field "$part" LABEL);      [[ -z "$label" ]] && label="—"
+        mp=$(part_field    "$part" MOUNTPOINT); [[ -z "$mp"    ]] && mp="(not mounted)"
+        lines+=$(printf '%-14s  %-8s  %-8s  %-18s  %s' "$part" "$size" "$fs" "$label" "$mp")
+        lines+=$'\n'
+    done <<< "$parts"
+
+    local sel
+    sel=$(printf '%s' "$lines" | grep -v '^$' | gum choose --header "Select a partition:") \
+        || { die "Cancelled."; return 1; }
+    awk '{print $1}' <<< "$sel"
+}
+
+# ─── Dashboard ────────────────────────────────────────────────────────────────
+
+render_status() {
+    local width
+    width=$(tput cols 2>/dev/null || echo 80)
+    local sep
+    sep=$(printf '%*s' "$width" '' | tr ' ' '─')
+
+    printf "${BOLD}${CYAN}  External Drive Manager${RESET}\n"
+    printf "${DIM}%s${RESET}\n" "$sep"
+    echo ""
+
+    local devs
+    devs=$(external_devs)
+    if [[ -z "$devs" ]]; then
+        printf "  ${DIM}No external drives detected.${RESET}\n\n"
+        return
+    fi
+
+    while IFS= read -r dev; do
+        [[ -z "$dev" ]] && continue
+        local size tran model
+        size=$(dev_field  "$dev" SIZE)
+        tran=$(dev_field  "$dev" TRAN);  [[ -z "$tran"  ]] && tran="?"
+        model=$(dev_field "$dev" MODEL); [[ -z "$model" ]] && model="Unknown"
+
+        printf "  ${BOLD}${WHITE}%-14s${RESET}  ${CYAN}%-8s${RESET}  ${DIM}[%-5s]${RESET}  %s\n" \
+            "$dev" "$size" "$tran" "$model"
+
+        local parts
+        parts=$(partition_devs "$dev")
+        if [[ -z "$parts" ]]; then
+            printf "    ${DIM}└─ (no partitions)${RESET}\n"
+        else
+            local part_arr=()
+            while IFS= read -r p; do part_arr+=("$p"); done <<< "$parts"
+            local total=${#part_arr[@]} idx=0
+
+            for part in "${part_arr[@]}"; do
+                (( idx++ )) || true
+                local prefix="├─"
+                [[ "$idx" -eq "$total" ]] && prefix="└─"
+
+                local psize pfs plabel pmp
+                psize=$(part_field  "$part" SIZE)
+                pfs=$(part_field    "$part" FSTYPE);     [[ -z "$pfs"   ]] && pfs="—"
+                plabel=$(part_field "$part" LABEL);      [[ -z "$plabel" ]] && plabel="—"
+                pmp=$(part_field    "$part" MOUNTPOINT)
+
+                if [[ -n "$pmp" ]]; then
+                    local pct pct_num color
+                    pct=$(part_usage "$part") || true
+                    pct_num=0; [[ "$pct" =~ ^[0-9]+$ ]] && pct_num="$pct"
+                    color="$GREEN"
+                    (( pct_num >= 95 )) && color="$RED" || (( pct_num >= 80 )) && color="$YELLOW" || true
+                    printf "    ${DIM}%s${RESET} ${color}%-14s${RESET}  %-8s  %-8s  %-18s  ${color}%3s%%${RESET}  ${DIM}→ %s${RESET}\n" \
+                        "$prefix" "$part" "$psize" "$pfs" "$plabel" "${pct:-?}" "$pmp"
+                else
+                    printf "    ${DIM}%s${RESET} ${YELLOW}%-14s${RESET}  %-8s  ${DIM}%-8s  %-18s  (not mounted)${RESET}\n" \
+                        "$prefix" "$part" "$psize" "$pfs" "$plabel"
+                fi
+            done
+        fi
+        echo ""
+    done <<< "$devs"
+}
+
+render_footer() {
+    local width
+    width=$(tput cols 2>/dev/null || echo 80)
+    local sep
+    sep=$(printf '%*s' "$width" '' | tr ' ' '─')
+    printf "${DIM}%s${RESET}\n" "$sep"
+    printf "  ${BOLD}[m]${RESET} Mount  ${BOLD}[u]${RESET} Unmount  ${BOLD}[e]${RESET} Eject  ${BOLD}[f]${RESET} Format  ${BOLD}[w]${RESET} Write ISO  ${BOLD}[i]${RESET} Info  ${BOLD}[p]${RESET} Partitions  ${BOLD}[r]${RESET} Refresh  ${BOLD}[q]${RESET} Quit\n"
+}
+
+# ─── Actions ──────────────────────────────────────────────────────────────────
+
+action_mount() {
+    local disk part
+    disk=$(pick_external_disk) || return 1
+    part=$(pick_partition "$disk") || return 1
+    info "Mounting $part..."
+    udisksctl mount -b "$part" && success "$part mounted." || die "Mount failed."
+}
+
+action_unmount() {
+    local disk part
+    disk=$(pick_external_disk) || return 1
+    part=$(pick_partition "$disk") || return 1
+    info "Unmounting $part..."
+    udisksctl unmount -b "$part" && success "$part unmounted." || die "Unmount failed."
+}
+
+action_eject() {
+    local disk
+    disk=$(pick_external_disk) || return 1
+
+    while IFS= read -r part; do
+        [[ -z "$part" ]] && continue
+        local mp
+        mp=$(part_field "$part" MOUNTPOINT)
+        [[ -n "$mp" ]] && { info "Unmounting $part..."; udisksctl unmount -b "$part" 2>/dev/null || true; }
+    done < <(partition_devs "$disk")
+
+    gum confirm "Safely eject $disk?" || { die "Cancelled."; return 1; }
+    udisksctl power-off -b "$disk" && success "$disk ejected safely." || die "Eject failed."
+}
+
+action_format() {
+    gum style --foreground 214 --bold "⚠ Format — all data on the partition will be lost"
+    local disk part
+    disk=$(pick_external_disk) || return 1
+    part=$(pick_partition "$disk") || return 1
+
+    local fs
+    fs=$(printf "vfat (FAT32)\next4\nexfat\nntfs" | gum choose --header "Filesystem:") \
+        || { die "Cancelled."; return 1; }
+    fs=$(awk '{print $1}' <<< "$fs")
+
+    local label
+    label=$(gum input --placeholder "Label (optional)" --header "Volume label:") || true
+
+    gum confirm "Format $part as $fs? All data will be erased." || { die "Cancelled."; return 1; }
+    info "Unmounting $part if needed..."
+    udisksctl unmount -b "$part" 2>/dev/null || true
+
+    local pkg_map=( [vfat]="dosfstools" [ext4]="e2fsprogs" [exfat]="exfatprogs" [ntfs]="ntfs-3g" )
+    local mkfs_cmd="mkfs.$fs"
+    if ! command -v "$mkfs_cmd" &>/dev/null; then
+        die "Missing $mkfs_cmd — install ${pkg_map[$fs]:-the required package} first."
+        return 1
+    fi
+
+    local lf=""
+    case "$fs" in
+        vfat)  [[ -n "$label" ]] && lf="-n $label"; gum spin --title "Formatting $fs..." -- mkfs.vfat  $lf "$part" ;;
+        ext4)  [[ -n "$label" ]] && lf="-L $label"; gum spin --title "Formatting $fs..." -- mkfs.ext4  -F $lf "$part" ;;
+        exfat) [[ -n "$label" ]] && lf="-n $label"; gum spin --title "Formatting $fs..." -- mkfs.exfat $lf "$part" ;;
+        ntfs)  [[ -n "$label" ]] && lf="-L $label"; gum spin --title "Formatting $fs..." -- mkfs.ntfs  -f $lf "$part" ;;
+        *)     die "Unsupported filesystem: $fs"; return 1 ;;
+    esac
+    success "$part formatted as $fs."
+}
+
+action_write_iso() {
+    gum style --foreground 214 --bold "⚠ Write ISO — all data on the disk will be erased"
+
+    # Search common locations for ISO/IMG files
+    local search_dirs=("$HOME/Downloads" "$HOME/Documents" "$HOME" "/tmp")
+    local found
+    found=$(find "${search_dirs[@]}" -maxdepth 3 \( -name "*.iso" -o -name "*.img" \) \
+            2>/dev/null | sort)
+
+    local iso
+    if [[ -n "$found" ]]; then
+        iso=$(echo "$found" | gum choose --header "Select an ISO/IMG file:") \
+            || { die "Cancelled."; return 1; }
+    else
+        info "No ISO/IMG files found in common locations — browse manually:"
+        iso=$(gum file --header "Select an ISO/IMG file:" "$HOME") \
+            || { die "Cancelled."; return 1; }
+    fi
+
+    [[ "$iso" != *.iso && "$iso" != *.img ]] && \
+        gum confirm "File doesn't look like an ISO/IMG — continue anyway?" || true
+
+    local iso_size disk
+    iso_size=$(du -sh "$iso" | awk '{print $1}')
+    disk=$(pick_external_disk) || return 1
+
+    gum confirm "Write $iso ($iso_size) to $disk? ALL content will be erased." || { die "Cancelled."; return 1; }
+
+    while IFS= read -r part; do
+        [[ -z "$part" ]] && continue
+        udisksctl unmount -b "$part" 2>/dev/null || true
+    done < <(partition_devs "$disk")
+
+    info "Writing $iso to $disk..."
+    gum style --foreground 33 "Progress (ctrl+c to cancel):"
+    dd if="$iso" of="$disk" bs=4M status=progress oflag=sync 2>&1
+    sync
+    success "ISO written to $disk successfully."
+}
+
+action_info() {
+    local disk
+    disk=$(pick_external_disk) || return 1
+    gum style --bold --border rounded --padding "1 2" --border-foreground 33 \
+        "$(lsblk -o NAME,SIZE,TYPE,FSTYPE,LABEL,MOUNTPOINT,MODEL "$disk")"
+}
+
+action_partitions() {
+    local disk
+    disk=$(pick_external_disk) || return 1
+
+    local sub
+    sub=$(printf "create partition\ndelete partition" | gum choose --header "Partition action on $disk:") \
+        || { die "Cancelled."; return 1; }
+
+    case "$sub" in
+        "create partition")
+            gum style --foreground 214 --bold "⚠ Create partition on $disk"
+            info "Current partition layout:"
+            parted -s "$disk" print 2>/dev/null || lsblk "$disk"
+            echo ""
+
+            local start end fs_type
+            start=$(gum input --placeholder "e.g. 1MiB or 0%" --header "Start:") \
+                || { die "Cancelled."; return 1; }
+            end=$(gum input --placeholder "e.g. 100% or 32GiB" --header "End:") \
+                || { die "Cancelled."; return 1; }
+            fs_type=$(printf "fat32\next4\nexfat\nntfs\nlinux-swap" | gum choose --header "Partition type:") \
+                || { die "Cancelled."; return 1; }
+
+            gum confirm "Create $fs_type partition on $disk ($start → $end)?" \
+                || { die "Cancelled."; return 1; }
+            gum spin --title "Creating partition..." -- \
+                parted -s "$disk" mkpart primary "$fs_type" "$start" "$end"
+            partprobe "$disk" 2>/dev/null || true
+            success "Partition created. Use [f] Format to write a filesystem."
+            ;;
+
+        "delete partition")
+            gum style --foreground 196 --bold "⚠ Delete partition — data will be permanently lost"
+            local part
+            part=$(pick_partition "$disk") || return 1
+
+            local part_num
+            part_num=$(grep -o '[0-9]*$' <<< "$part")
+            [[ -z "$part_num" ]] && { die "Could not determine partition number from $part."; return 1; }
+
+            gum confirm "Delete partition $part (number $part_num)? This cannot be undone." \
+                || { die "Cancelled."; return 1; }
+            info "Unmounting $part if needed..."
+            udisksctl unmount -b "$part" 2>/dev/null || true
+            gum spin --title "Deleting partition..." -- parted -s "$disk" rm "$part_num"
+            partprobe "$disk" 2>/dev/null || true
+            success "Partition $part_num deleted from $disk."
+            ;;
+    esac
+}
+
+# ─── Main Loop ────────────────────────────────────────────────────────────────
+
+main() {
+    local cleanup_done=0
+    cleanup() {
+        [[ "$cleanup_done" -eq 1 ]] && return
+        cleanup_done=1
+        tput cnorm 2>/dev/null
+        tput rmcup 2>/dev/null
+        echo ""
+    }
+    trap cleanup EXIT INT TERM
+
+    tput smcup 2>/dev/null
+    tput civis 2>/dev/null
+
+    while true; do
+        clear
+        render_status
+        render_footer
+
+        local key=""
+        read -r -n 1 key 2>/dev/null || true
+        if [[ -n "$key" ]]; then
+            tput cnorm 2>/dev/null
+            clear
+            local do_pause=true
+            case "$key" in
+                m) action_mount ;;
+                u) action_unmount ;;
+                e) action_eject ;;
+                f) action_format ;;
+                w) action_write_iso ;;
+                i) action_info ;;
+                p) action_partitions ;;
+                r) do_pause=false ;;
+                q) exit 0 ;;
+            esac
+            [[ "$do_pause" == true ]] && pause
+            tput civis 2>/dev/null
+        fi
+    done
+}
+
+# ─── Dependency Check ─────────────────────────────────────────────────────────
+
+for cmd in gum udisksctl lsblk dd parted; do
+    command -v "$cmd" &>/dev/null || fatal "Missing dependency: $cmd"
+done
+
+main

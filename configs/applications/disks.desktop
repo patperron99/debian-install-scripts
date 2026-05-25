@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Disks
+Comment=Gestionnaire de disques externes (TUI)
+Exec=kitty -e bash -c '~/.local/bin/disks'
+Icon=drive-removable-media
+Type=Application
+Categories=System;Utility;
+Terminal=false
