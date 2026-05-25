@@ -98,9 +98,9 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 # ── Scripts ───────────────────────────────────────────────────────────────────
 
 _section "Scripts"
-REPO_DIR="$(dirname "$SCRIPT_DIR")"
+REPO_DIR="$HOME/.local/share/debian-install-scripts"
 
-if git -C "$REPO_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
+if [ -d "$REPO_DIR/.git" ]; then
     BRANCH=$(git -C "$REPO_DIR" symbolic-ref --short HEAD 2>/dev/null || echo "main")
     if gum spin --title "Vérification des mises à jour scripts..." -- \
         git -C "$REPO_DIR" fetch origin 2>/dev/null; then
@@ -111,13 +111,17 @@ if git -C "$REPO_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
             _warn "$CHANGED fichier(s) de scripts à mettre à jour."
             echo ""
             git -C "$REPO_DIR" checkout "origin/$BRANCH" -- scripts/
+            for f in "$REPO_DIR/scripts/"*.sh; do
+                [ -f "$HOME/.local/bin/$(basename "$f")" ] && \
+                    cp "$f" "$HOME/.local/bin/$(basename "$f")"
+            done
             _ok "Scripts mis à jour depuis origin/$BRANCH."
         fi
     else
         _warn "Impossible de contacter le dépôt. Scripts non mis à jour."
     fi
 else
-    _warn "Dépôt git non détecté. Scripts non mis à jour."
+    _warn "Dépôt non trouvé dans $REPO_DIR. Relancer setup-sway-config.sh."
 fi
 
 # ── Redémarrage ───────────────────────────────────────────────────────────────
