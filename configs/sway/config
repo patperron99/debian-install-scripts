@@ -76,6 +76,6 @@ seat seat0 xcursor_theme Adwaita 24
 mouse_warping container
 
 include /etc/sway/config.d/*.conf
-output * bg $HOME/.configs/sway/default.jpg
+output * bg $HOME/.configs/sway/default.jpg fill
 
 exec_always autotiling
