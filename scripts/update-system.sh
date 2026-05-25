@@ -95,6 +95,31 @@ _section "Binaires GitHub"
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 "$SCRIPT_DIR/install-github-bins.sh"
 
+# ── Scripts ───────────────────────────────────────────────────────────────────
+
+_section "Scripts"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
+
+if git -C "$REPO_DIR" rev-parse --is-inside-work-tree &>/dev/null; then
+    BRANCH=$(git -C "$REPO_DIR" symbolic-ref --short HEAD 2>/dev/null || echo "main")
+    if gum spin --title "Vérification des mises à jour scripts..." -- \
+        git -C "$REPO_DIR" fetch origin 2>/dev/null; then
+        CHANGED=$(git -C "$REPO_DIR" diff HEAD "origin/$BRANCH" -- scripts/ 2>/dev/null | grep -c "^diff" || true)
+        if [ "$CHANGED" -eq 0 ]; then
+            _ok "Scripts déjà à jour."
+        else
+            _warn "$CHANGED fichier(s) de scripts à mettre à jour."
+            echo ""
+            git -C "$REPO_DIR" checkout "origin/$BRANCH" -- scripts/
+            _ok "Scripts mis à jour depuis origin/$BRANCH."
+        fi
+    else
+        _warn "Impossible de contacter le dépôt. Scripts non mis à jour."
+    fi
+else
+    _warn "Dépôt git non détecté. Scripts non mis à jour."
+fi
+
 # ── Redémarrage ───────────────────────────────────────────────────────────────
 
 if [ -f /var/run/reboot-required ]; then
