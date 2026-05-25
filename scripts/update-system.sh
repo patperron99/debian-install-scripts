@@ -69,12 +69,18 @@ if command -v fwupdmgr &>/dev/null; then
     gum spin --title "Rafraîchissement des métadonnées firmware..." -- \
         sudo fwupdmgr refresh --force 2>/dev/null || true
 
-    FWUPD_OUTPUT=$(sudo fwupdmgr get-updates 2>/dev/null) || true
+    FWUPD_TMP=$(mktemp)
+    gum spin --title "Recherche de mises à jour firmware..." -- \
+        bash -c "sudo fwupdmgr get-updates > '$FWUPD_TMP' 2>&1"
+    FWUPD_EXIT=$?
+    FWUPD_OUTPUT=$(cat "$FWUPD_TMP")
+    rm -f "$FWUPD_TMP"
 
-    if [ -z "$FWUPD_OUTPUT" ] || echo "$FWUPD_OUTPUT" | grep -qi "no updates"; then
+    if [ "$FWUPD_EXIT" -eq 2 ]; then
         _ok "Aucune mise à jour firmware disponible."
+    elif [ "$FWUPD_EXIT" -ne 0 ]; then
+        _warn "Vérification firmware impossible (code $FWUPD_EXIT)."
     else
-        FWUPD_COUNT=$(echo "$FWUPD_OUTPUT" | grep -c "^Device ID\|^.*:" 2>/dev/null || echo "?")
         _warn "Mises à jour firmware disponibles."
         echo ""
         echo "$FWUPD_OUTPUT"
