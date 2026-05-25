@@ -24,6 +24,8 @@ gum confirm \
     --unselected.foreground 252 \
     "Lancer les mises à jour ?" || exit 0
 
+sudo -v || exit 1
+
 # ── APT ───────────────────────────────────────────────────────────────────────
 
 _section "APT"
