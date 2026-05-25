@@ -50,7 +50,7 @@ mkdir -p "$HOME/.local/share"
 echo ""
 echo "Backing up existing configuration files..."
 mkdir -p "$CONFIG_DIR"
-for file in config; do
+for file in config keybindings.conf rules.conf; do
     if [ -f "$CONFIG_DIR/$file" ]; then
         cp "$CONFIG_DIR/$file" "$CONFIG_DIR/$file.backup"
         echo -e "${GREEN}Backed up: $file${NC}"
@@ -60,8 +60,10 @@ done
 # Install sway config
 echo ""
 echo "Installing Sway configuration files..."
-cp "$CONFIGS_DIR/sway/config" "$CONFIG_DIR/config"
-echo -e "${GREEN}Installed: ~/.config/sway/config${NC}"
+cp "$CONFIGS_DIR/sway/config"           "$CONFIG_DIR/config"
+cp "$CONFIGS_DIR/sway/keybindings.conf" "$CONFIG_DIR/keybindings.conf"
+cp "$CONFIGS_DIR/sway/rules.conf"       "$CONFIG_DIR/rules.conf"
+echo -e "${GREEN}Installed: ~/.config/sway/{config,keybindings.conf,rules.conf}${NC}"
 
 # Install hyprlock config (hyprlock looks for it in ~/.config/hypr/)
 echo ""
@@ -220,7 +222,7 @@ fi
 echo ""
 echo "Installing helper scripts to ~/.local/bin/..."
 mkdir -p "$HOME/.local/bin"
-for helper in powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh install-github-bins.sh screensaver-launch.sh screensaver-stop.sh screensaver-lock.sh screensaver-tte.sh; do
+for helper in utilitymenu.sh refresh-workspaces.sh powermenu.sh wallpaper-next.sh theme-picker.sh check-updates.sh update-system.sh install-github-bins.sh screensaver-launch.sh screensaver-stop.sh screensaver-lock.sh screensaver-tte.sh; do
     if [ -f "$SCRIPTS_DIR/$helper" ]; then
         cp "$SCRIPTS_DIR/$helper" "$HOME/.local/bin/$helper"
         chmod +x "$HOME/.local/bin/$helper"

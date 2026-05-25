@@ -1,7 +1,6 @@
 #!/bin/bash
-# powermenu.sh — Power menu via wofi dmenu
+# powermenu.sh — Sous-menu Power (appelé depuis utilitymenu.sh)
 # Installed to ~/.local/bin/powermenu.sh by setup-sway-config.sh
-# Bound to SUPER+SHIFT+P in sway config
 
 OPTIONS="Screensaver\nLock\nLogout\nSuspend\nHibernate\nReboot\nShutdown"
 CHOICE=$(printf '%b' "$OPTIONS" | wofi --dmenu --prompt "Power" \
