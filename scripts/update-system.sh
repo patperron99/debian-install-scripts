@@ -110,13 +110,13 @@ if [ -d "$REPO_DIR/.git" ]; then
     BRANCH=$(git -C "$REPO_DIR" symbolic-ref --short HEAD 2>/dev/null || echo "main")
     if gum spin --title "Vérification des mises à jour scripts..." -- \
         git -C "$REPO_DIR" fetch origin 2>/dev/null; then
-        CHANGED=$(git -C "$REPO_DIR" diff HEAD "origin/$BRANCH" -- scripts/ 2>/dev/null | grep -c "^diff" || true)
+        CHANGED=$(git -C "$REPO_DIR" diff HEAD "origin/$BRANCH" -- scripts/ configs/ 2>/dev/null | grep -c "^diff" || true)
         if [ "$CHANGED" -eq 0 ]; then
             _ok "Scripts déjà à jour."
         else
-            _warn "$CHANGED fichier(s) de scripts à mettre à jour."
+            _warn "$CHANGED fichier(s) à mettre à jour."
             echo ""
-            git -C "$REPO_DIR" checkout "origin/$BRANCH" -- scripts/
+            git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
             for f in "$REPO_DIR/scripts/"*.sh; do
                 [ -f "$HOME/.local/bin/$(basename "$f")" ] && \
                     cp "$f" "$HOME/.local/bin/$(basename "$f")"
