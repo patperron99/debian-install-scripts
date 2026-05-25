@@ -104,6 +104,11 @@ else
 fi
 usermod -aG sudo,adm,dialout,cdrom,floppy,audio,dip,video,plugdev,users,netdev "$INSTALL_USERNAME"
 
+# ── Deploy repo to user ~/.local/share/ (no network required) ─────────────────
+mkdir -p "/home/$INSTALL_USERNAME/.local/share"
+cp -r /opt/debian-install-scripts "/home/$INSTALL_USERNAME/.local/share/debian-install-scripts"
+chown -R "$INSTALL_USERNAME:$INSTALL_USERNAME" "/home/$INSTALL_USERNAME/.local"
+
 # ── Sway postinstall ──────────────────────────────────────────────────────────
 REPO_DIR="/opt/debian-install-scripts"
 if [ -d "$REPO_DIR" ]; then

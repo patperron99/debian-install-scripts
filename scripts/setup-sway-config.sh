@@ -235,19 +235,19 @@ done
 # Clone the repo to ~/.local/share/debian-install-scripts/ for future self-updates
 REPO_SOURCE="$(dirname "$SCRIPTS_DIR")"
 REPO_DEST="$HOME/.local/share/debian-install-scripts"
-if git -C "$REPO_SOURCE" rev-parse --is-inside-work-tree &>/dev/null; then
+
+echo ""
+if [ -d "$REPO_DEST/.git" ]; then
+    echo "Dépôt déjà présent dans $REPO_DEST, mise à jour..."
+    git -C "$REPO_DEST" fetch origin 2>/dev/null \
+        && echo -e "${GREEN}Dépôt mis à jour${NC}" \
+        || echo -e "${YELLOW}Fetch ignoré (hors ligne)${NC}"
+elif git -C "$REPO_SOURCE" rev-parse --is-inside-work-tree &>/dev/null; then
     REMOTE_URL=$(git -C "$REPO_SOURCE" remote get-url origin 2>/dev/null || true)
     BRANCH=$(git -C "$REPO_SOURCE" symbolic-ref --short HEAD 2>/dev/null || echo "main")
     if [ -n "$REMOTE_URL" ]; then
-        echo ""
-        if [ -d "$REPO_DEST/.git" ]; then
-            echo "Dépôt déjà présent dans $REPO_DEST, mise à jour..."
-            git -C "$REPO_DEST" fetch origin
-            git -C "$REPO_DEST" checkout "origin/$BRANCH" -- scripts/
-        else
-            echo "Clonage du dépôt dans $REPO_DEST..."
-            git clone --branch "$BRANCH" "$REMOTE_URL" "$REPO_DEST"
-        fi
+        echo "Clonage du dépôt dans $REPO_DEST..."
+        git clone --branch "$BRANCH" "$REMOTE_URL" "$REPO_DEST"
         echo -e "${GREEN}Dépôt disponible dans $REPO_DEST${NC}"
     fi
 fi
