@@ -36,9 +36,19 @@ Dernière mise à jour : 2026-05-22
 
 ### Wishlist / Futur
 
+- [ ] Fixer la double demande de mot de passe root et user.
+- [ ] Retirer la seconde alerte decrasement du disk
+- [ ] script kvm/qemu, retirer le telechargement de l'iso et creation de vm (simple install)
+- [ ] Corriger icons network/wifi dans waybar (online/offline - eth vs wifi)
+- [ ] auto-config du theme gtk/cursor pour dark
+- [ ] Revoir la gestion des binary git (addons vs core)
+- [ ] Garder un seul file manager -> yazi ou spf
+- [ ] Disks, missing dependecy parted.. parted need to be root/sudo
+- [ ] Auto install snapper et config boot quand btrfs est utilise.
+- [ ] snapper config root not found
+- [ ] Ajouter btop au theme selector.
 - [ ] Script détection GPU (Intel/AMD/NVIDIA) → env vars au boot
 - [ ] Test XDG portals (screenshot + file picker)
-- [ ] Revue permissions sandbox Flatpak
 - [x] Migrer WiFi de NetworkManager → iwd — impala fonctionne
 
 ---
