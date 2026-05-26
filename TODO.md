@@ -1,7 +1,7 @@
 # TODO — Debian Sway Install Suite
 
 Installation Debian opinionée, style Omarchy — Wayland-pur, APT only.
-Dernière mise à jour : 2026-05-22
+Dernière mise à jour : 2026-05-26
 
 ---
 
@@ -36,20 +36,36 @@ Dernière mise à jour : 2026-05-22
 
 ### Wishlist / Futur
 
-- [ ] Fixer la double demande de mot de passe root et user.
-- [ ] Retirer la seconde alerte decrasement du disk
-- [ ] script kvm/qemu, retirer le telechargement de l'iso et creation de vm (simple install)
-- [ ] Corriger icons network/wifi dans waybar (online/offline - eth vs wifi)
-- [ ] auto-config du theme gtk/cursor pour dark
-- [ ] Revoir la gestion des binary git (addons vs core)
-- [ ] Garder un seul file manager -> yazi ou spf
-- [ ] Disks, missing dependecy parted.. parted need to be root/sudo
-- [ ] Auto install snapper et config boot quand btrfs est utilise.
-- [ ] snapper config root not found
-- [ ] Ajouter btop au theme selector.
+#### Bugs
+
+- [ ] Fixer la double demande de mot de passe root et user
+- [ ] Retirer la seconde alerte/question d'écrasement du disk
+- [ ] Disks — dépendance `parted` manquante, doit être exécuté en root/sudo
+- [ ] `snapper config root not found`
+
+#### UX & Thèmes
+
+- [ ] Corriger icons network/wifi dans waybar (online/offline — eth vs wifi)
+- [ ] Auto-config du thème GTK/cursor pour dark
+- [ ] Ajouter btop au theme selector
+- [ ] Uniformiser le thème par défaut (nord, gruvbox, catppuccin-mocha, tokyo-night, rose-pine) → gruvbox par défaut
+
+#### Scripts & Infrastructure
+
 - [ ] Script détection GPU (Intel/AMD/NVIDIA) → env vars au boot
+- [ ] Auto-install snapper + config boot quand btrfs est utilisé
 - [ ] Test XDG portals (screenshot + file picker)
-- [x] Migrer WiFi de NetworkManager → iwd — impala fonctionne
+- [ ] Revoir la gestion des binaires git (addons vs core)
+- [ ] Garder un seul file manager → yazi ou spf
+
+#### Refactoring / Nouveau projet
+
+- [ ] Restructurer les scripts (naming, structure, ordre) — rendre modulaires, base du nouveau projet
+- [ ] Revoir la documentation README.md
+
+#### Optionnel
+
+- [ ] Script KVM/QEMU — retirer le téléchargement de l'ISO et création de VM (simple install)
 
 ---
 
@@ -79,6 +95,7 @@ Dernière mise à jour : 2026-05-22
 - [x] Vestiges Hyprland — `WAYLAND_PURE.md` archivé dans `docs/legacy/`, `setup-updates.sh` supprimé, commentaire `kanshi/config` corrigé
 - [x] Bluetooth — `bluetui` binaire GitHub (musl statique, x86_64/aarch64) remplace blueman + pip inexistant ; vérification de version dans `check-updates.sh`
 - [x] Audio — `pulsemixer` TUI remplace `pavucontrol` (non installé) sur le clic waybar ; fenêtre flottante via `app_id="pulsemixer"`
+- [x] WiFi — migré NetworkManager → iwd ; `impala` fonctionne
 
 ---
 
