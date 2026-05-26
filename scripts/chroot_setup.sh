@@ -45,16 +45,25 @@ echo "127.0.1.1 $INSTALL_HOSTNAME.localdomain $INSTALL_HOSTNAME" >> /etc/hosts
 apt install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-linux-nonfree \
     firmware-iwlwifi firmware-realtek firmware-misc-nonfree \
     intel-microcode amd64-microcode \
-    sudo vim bash-completion grub-efi-amd64 network-manager iwd btrfs-progs \
+    sudo vim bash-completion grub-efi-amd64 iwd btrfs-progs \
     cryptsetup openssh-server git plymouth plymouth-themes wget curl \
     rfkill pciutils usbutils build-essential dkms unzip
 
-# Configure NetworkManager to use iwd as WiFi backend from first boot
-mkdir -p /etc/NetworkManager/conf.d
-cat > /etc/NetworkManager/conf.d/wifi-backend.conf << 'EOF'
-[device]
-wifi.backend=iwd
+# Config générique Ethernet via systemd-networkd
+mkdir -p /etc/systemd/network
+cat > /etc/systemd/network/20-ethernet.network << 'EOF'
+[Match]
+Type=ether
+
+[Network]
+DHCP=yes
+IPv6AcceptRA=yes
+
+[DHCP]
+RouteMetric=100
 EOF
+
+systemctl enable systemd-networkd
 
 mkdir -p /etc/iwd
 cat > /etc/iwd/main.conf << 'EOF'
